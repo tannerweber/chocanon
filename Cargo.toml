@@ -1,0 +1,19 @@
+[package]
+name = "chocanon"
+version = "0.1.0"
+edition = "2024"
+authors = [
+	"Tanner Weber <tannerw@pdx.edu>",
+	"Cristian Hernandez <cristhe@pdx.edu>",
+	"Jethro Fernandez <jethrof@pdx.edu>",
+	"Torin Costales <turoczy@pdx.edu>",
+	"Miles Turoczy <tcostal2@pdx.edu>"
+]
+description = "Chocaholics Anonymous simulator"
+repository = "https://github.com/tannerweber/chocanon"
+homepage = "https://github.com/tannerweber/chocanon"
+readme = "README.md"
+
+[dependencies]
+#lettre = "0.11"
+#rusqlite = { version = "0.37.0", features = ["bundled"] }
