@@ -1,4 +1,4 @@
-//! File: lib.rs
+//! File: mod.rs
 //!
 //! Authors:
 //! - Tanner Weber, tannerw@pdx.edu
@@ -12,8 +12,8 @@
 //! Course: CS 314, Fall 2025
 //! Instructor: Christopher Gilmore
 
-pub mod center;
+pub mod db;
 
-pub mod mterm;
+pub mod egen;
 
-pub mod pterm;
+pub mod esend;

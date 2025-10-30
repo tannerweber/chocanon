@@ -1,4 +1,4 @@
-//! File: lib.rs
+//! File: mterm.rs
 //!
 //! Authors:
 //! - Tanner Weber, tannerw@pdx.edu
@@ -12,8 +12,6 @@
 //! Course: CS 314, Fall 2025
 //! Instructor: Christopher Gilmore
 
-pub mod center;
+mod mterm {
 
-pub mod mterm;
-
-pub mod pterm;
+}
