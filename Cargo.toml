@@ -15,5 +15,5 @@ homepage = "https://github.com/tannerweber/chocanon"
 readme = "README.md"
 
 [dependencies]
+rusqlite = { version = "0.37.0", features = ["bundled"] }
 #lettre = "0.11"
-#rusqlite = { version = "0.37.0", features = ["bundled"] }
