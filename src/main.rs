@@ -12,7 +12,10 @@
 //! Course: CS 314, Fall 2025
 //! Instructor: Christopher Gilmore
 
+use chocanon::app;
+
 fn main() {
     println!("Hello world!");
 
+    let _ = app::run();
 }

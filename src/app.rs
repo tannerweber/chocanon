@@ -1,4 +1,4 @@
-//! File: mod.rs
+//! File: app.rs
 //!
 //! Authors:
 //! - Tanner Weber, tannerw@pdx.edu
@@ -12,8 +12,10 @@
 //! Course: CS 314, Fall 2025
 //! Instructor: Christopher Gilmore
 
-pub mod db;
+use std::error::Error;
+use crate::db::{DB};
 
-pub mod egen;
-
-pub mod esend;
+pub fn run() -> Result<(), Box<dyn Error>> {
+    let db: DB = DB::new();
+    Ok(())
+}

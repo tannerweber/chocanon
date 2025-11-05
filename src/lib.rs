@@ -12,7 +12,11 @@
 //! Course: CS 314, Fall 2025
 //! Instructor: Christopher Gilmore
 
-pub mod center;
+pub mod app;
+
+pub mod db;
+
+pub mod esend;
 
 pub mod mterm;
 
