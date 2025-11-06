@@ -12,10 +12,16 @@
 //! Course: CS 314, Fall 2025
 //! Instructor: Christopher Gilmore
 
-use chocanon::app;
+use std::error::Error;
+use chocanon::db::{DB};
 
 fn main() {
     println!("Hello world!");
 
-    let _ = app::run();
+    let _ = run();
+}
+
+pub fn run() -> Result<(), Box<dyn Error>> {
+    let db: DB = DB::new();
+    Ok(())
 }
