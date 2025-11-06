@@ -15,7 +15,7 @@
 use rusqlite::{Connection};
 
 const MAX_NAME_SIZE: u32 = 25;
-const MAX_MEMBER_NUMBER: u32 = 999999999; // 9 Digits
+const MAX_MEMBER_ID: u32 = 999999999; // 9 Digits
 const MAX_ADDRESS_SIZE: u32 = 25;
 const MAX_CITY_SIZE: u32 = 14;
 const STATE_SIZE: usize = 2;
@@ -39,7 +39,7 @@ impl DB {
                 name        VARCHAR(25) NOT NULL,
                 location    BLOB
             )",
-            (), // empty list of parameters.
+            (),
         ) {
             Ok(_) => (),
             Err(_) => panic!("Failed to create members table"),
@@ -99,14 +99,14 @@ impl DB {
 #[derive(Debug)]
 pub struct PersonInfo {
     name: String,
-    number: u32,
+    number: ID,
     location: LocationInfo,
 }
 
 impl PersonInfo {
     pub fn new(
         name: & str,
-        number: u32,
+        id: ID,
         location: & LocationInfo
     ) -> Result<Self, String> {
 
@@ -116,17 +116,26 @@ impl PersonInfo {
                 MAX_NAME_SIZE, name
             ));
         }
-        if number > MAX_MEMBER_NUMBER {
-            return Err(format!(
-                "number must be less than or equal to {}: {}",
-                MAX_MEMBER_NUMBER, number
-            ));
-        }
         Ok(PersonInfo {
             name: name.to_string(),
-            number: number,
+            number: id,
             location: location.clone(),
         })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ID (u32);
+
+impl ID {
+    pub fn new(id: u32) -> Result<Self, String> {
+        if id > MAX_MEMBER_ID{
+            return Err(format!(
+                "number must be less than or equal to {}: {}",
+                MAX_MEMBER_ID, id
+            ));
+        }
+        Ok(ID(id))
     }
 }
 
