@@ -15,35 +15,32 @@
 
 //! Module for sending emails by writing them as files.
 
-use std::fs::File;
+use std::fs::{create_dir, File};
 use std::io::prelude::*;
 
-pub struct Email {
-    to: String,
-    from: String,
-    subject: String,
-    body: String,
-}
+const PATH: &str = "./emails";
 
-impl Email {
-    pub fn new(
+/// Writes an email as a file.
+pub fn send_email(
         to: & str,
         from: & str,
         subject: & str,
-        body: & str
-    ) -> Result<Self, ()> {
+        body: & str,
+    ) -> std::io::Result<()> {
 
-        Ok(Email {
-            to: "Timmy".to_string(),
-            from: "Chocanon".to_string(),
-            subject: "Member report".to_string(),
-            body: "Stuff".to_string(),
-        })
+    match create_dir(PATH) {
+        Ok(_) => (),
+        Err(_) => (),
     }
-}
 
-pub fn send_email(email: & Email) -> std::io::Result<()> {
-    let mut file = File::create("foo.txt")?;
-    file.write_all(b"Hello, world!")?;
+    let date = chrono::Local::now().date_naive().to_string();
+    let file_name = format!("{}_{}.txt", to, date);
+    let mut file = File::create(&file_name)?;
+
+    file.write_all(to.as_bytes())?;
+    file.write_all(from.as_bytes())?;
+    file.write_all(subject.as_bytes())?;
+    file.write_all(body.as_bytes())?;
+
     Ok(())
 }
