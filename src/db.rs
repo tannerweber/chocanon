@@ -15,7 +15,7 @@
 
 //! Module for the Chocaholics Anonymous database.
 
-use rusqlite::{Connection};
+use rusqlite::Connection;
 
 const MAX_NAME_SIZE: u32 = 25;
 const MAX_MEMBER_ID: u32 = 999999999; // 9 Digits
@@ -24,14 +24,14 @@ const MAX_ADDRESS_SIZE: u32 = 25;
 const MAX_CITY_SIZE: u32 = 14;
 const STATE_SIZE: usize = 2;
 const MAX_ZIPCODE: u32 = 99999; // 5 Digits
-                                //
+//
 const DATE_TIME_SIZE: u32 = 19; // MM-DD-YYYY HH:MM:SS
 const DATE_SIZE: u32 = 10; // MM-DD-YYYY
 const MAX_SERVICE_CODE: u32 = 999999; // 6 Digits
 const MAX_COMMENT_SIZE: u32 = 100;
 
 /// Path to the ChocAn database file.
-const DB_PATH: & str = "./chocanon.db3";
+const DB_PATH: &str = "./chocanon.db3";
 
 /// A ChocAn database.
 #[derive(Debug)]
@@ -47,10 +47,7 @@ impl DB {
     /// Panics on failing to connect and create tables.
     pub fn new() -> Self {
         let conn: Connection;
-        match Connection::open_with_flags(
-            DB_PATH,
-            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE
-        ) {
+        match Connection::open_with_flags(DB_PATH, rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE) {
             Ok(c) => conn = c,
             Err(err) => panic!("Failed to connect to database: {}", err),
         }
@@ -62,6 +59,7 @@ impl DB {
                 city        TEXT NOT NULL CHECK (length(city) <= {}),
                 state       TEXT NOT NULL CHECK (length(state) == {}),
                 zipcode     INTEGER CHECK (zipcode <= {}),
+                is_valid    BIT
                 PRIMARY KEY (id)
             )",
             [
@@ -70,7 +68,7 @@ impl DB {
                 MAX_ADDRESS_SIZE,
                 MAX_CITY_SIZE,
                 STATE_SIZE.try_into().unwrap(),
-                MAX_ZIPCODE
+                MAX_ZIPCODE,
             ],
         ) {
             Ok(n) => eprintln!("Updated {} rows.", n),
@@ -84,6 +82,7 @@ impl DB {
                 city        TEXT NOT NULL CHECK (length(city) <= {}),
                 state       TEXT NOT NULL CHECK (length(state) == {}),
                 zipcode     INTEGER CHECK (zipcode <= {}),
+                is_valid    BIT
                 PRIMARY KEY (id)
             )",
             [
@@ -92,7 +91,7 @@ impl DB {
                 MAX_ADDRESS_SIZE,
                 MAX_CITY_SIZE,
                 STATE_SIZE.try_into().unwrap(),
-                MAX_ZIPCODE
+                MAX_ZIPCODE,
             ],
         ) {
             Ok(n) => eprintln!("Updated {} rows.", n),
@@ -114,7 +113,7 @@ impl DB {
                 MAX_MEMBER_ID,
                 MAX_PROVIDER_ID,
                 MAX_SERVICE_CODE,
-                MAX_COMMENT_SIZE
+                MAX_COMMENT_SIZE,
             ],
         ) {
             Ok(n) => eprintln!("Updated {} rows.", n),
@@ -128,28 +127,28 @@ impl DB {
     /// # Failure
     ///
     /// Will return `Err` if any reports are not sent.
-    pub fn send_member_reports() {
-
+    pub fn send_member_reports() -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
-    pub fn send_provider_reports() {
-
+    pub fn send_provider_reports() -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
-    pub fn send_manager_report() {
-
+    pub fn send_manager_report() -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
-    pub fn is_valid_member_id() -> bool {
-        false
+    pub fn is_valid_member_id() -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
-    pub fn is_valid_provider_id() -> bool {
-        false
+    pub fn is_valid_provider_id() -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
-    pub fn is_valid_service_id() -> bool {
-        false
+    pub fn is_valid_service_id() -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
     /// Adds a member to the database.
@@ -157,10 +156,7 @@ impl DB {
     /// # Failure
     ///
     /// Will return `Err` if the member was not added.
-    pub fn add_member(
-        &self,
-        person: & PersonInfo,
-    ) -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn add_member(&self, person: &PersonInfo) -> rusqlite::Result<(), rusqlite::Error> {
         let state: String = person.location.state.iter().collect();
 
         self.conn.execute(
@@ -184,20 +180,20 @@ impl DB {
         Ok(())
     }
 
-    pub fn add_provider(&self, person: & PersonInfo) -> bool {
-        false
+    pub fn add_provider(&self, person: &PersonInfo) -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
-    pub fn remove_member(&self, id: u32) -> bool {
-        false
+    pub fn remove_member(&self, id: u32) -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
-    pub fn remove_provider(&self, id: u32) -> bool {
-        false
+    pub fn remove_provider(&self, id: u32) -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
-    pub fn add_consultation_record() -> bool {
-        false
+    pub fn add_consultation_record() -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 }
 
@@ -215,12 +211,7 @@ impl PersonInfo {
     /// # Failure
     ///
     /// Will return `Err` if a paramater is not valid.
-    pub fn new(
-        name: & str,
-        id: u32,
-        location: & LocationInfo
-    ) -> Result<Self, String> {
-
+    pub fn new(name: &str, id: u32, location: &LocationInfo) -> Result<Self, String> {
         if id > MAX_MEMBER_ID {
             return Err(format!(
                 "id must be less than or equal to {}: {}",
@@ -257,10 +248,10 @@ impl LocationInfo {
     ///
     /// Will return `Err` if a paramater is not valid.
     pub fn new(
-        address: & str,
-        city: & str,
-        state: & [char; STATE_SIZE],
-        zipcode: u32
+        address: &str,
+        city: &str,
+        state: &[char; STATE_SIZE],
+        zipcode: u32,
     ) -> Result<Self, String> {
         if address.chars().count() > MAX_ADDRESS_SIZE.try_into().unwrap() {
             return Err(format!(
