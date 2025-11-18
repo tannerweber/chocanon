@@ -47,7 +47,10 @@ impl DB {
     /// Panics on failing to connect and create tables.
     pub fn new() -> Self {
         let conn: Connection;
-        match Connection::open_with_flags(DB_PATH, rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE) {
+        match Connection::open_with_flags(
+            DB_PATH,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE,
+        ) {
             Ok(c) => conn = c,
             Err(err) => panic!("Failed to connect to database: {}", err),
         }
@@ -156,7 +159,10 @@ impl DB {
     /// # Failure
     ///
     /// Will return `Err` if the member was not added.
-    pub fn add_member(&self, person: &PersonInfo) -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn add_member(
+        &self,
+        person: &PersonInfo,
+    ) -> rusqlite::Result<(), rusqlite::Error> {
         let state: String = person.location.state.iter().collect();
 
         self.conn.execute(
@@ -180,19 +186,29 @@ impl DB {
         Ok(())
     }
 
-    pub fn add_provider(&self, person: &PersonInfo) -> rusqlite::Result<bool, rusqlite::Error> {
+    pub fn add_provider(
+        &self,
+        person: &PersonInfo,
+    ) -> rusqlite::Result<bool, rusqlite::Error> {
         Ok(false)
     }
 
-    pub fn remove_member(&self, id: u32) -> rusqlite::Result<bool, rusqlite::Error> {
+    pub fn remove_member(
+        &self,
+        id: u32,
+    ) -> rusqlite::Result<bool, rusqlite::Error> {
         Ok(false)
     }
 
-    pub fn remove_provider(&self, id: u32) -> rusqlite::Result<bool, rusqlite::Error> {
+    pub fn remove_provider(
+        &self,
+        id: u32,
+    ) -> rusqlite::Result<bool, rusqlite::Error> {
         Ok(false)
     }
 
-    pub fn add_consultation_record() -> rusqlite::Result<bool, rusqlite::Error> {
+    pub fn add_consultation_record() -> rusqlite::Result<bool, rusqlite::Error>
+    {
         Ok(false)
     }
 }
@@ -211,7 +227,11 @@ impl PersonInfo {
     /// # Failure
     ///
     /// Will return `Err` if a paramater is not valid.
-    pub fn new(name: &str, id: u32, location: &LocationInfo) -> Result<Self, String> {
+    pub fn new(
+        name: &str,
+        id: u32,
+        location: &LocationInfo,
+    ) -> Result<Self, String> {
         if id > MAX_MEMBER_ID {
             return Err(format!(
                 "id must be less than or equal to {}: {}",

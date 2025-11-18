@@ -15,19 +15,18 @@
 
 //! Module for sending emails by writing them as files.
 
-use std::fs::{create_dir, File};
+use std::fs::{File, create_dir};
 use std::io::prelude::*;
 
 const PATH: &str = "./emails";
 
 /// Writes an email as a file.
 pub fn send_email(
-        to: & str,
-        from: & str,
-        subject: & str,
-        body: & str,
-    ) -> std::io::Result<()> {
-
+    to: &str,
+    from: &str,
+    subject: &str,
+    body: &str,
+) -> std::io::Result<()> {
     match create_dir(PATH) {
         Ok(_) => (),
         Err(_) => (),
