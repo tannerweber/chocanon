@@ -1,4 +1,4 @@
 # ChocAn
 
 all:
-	cargo fmt && cargo clippy && cargo build
+	cargo fmt && cargo clippy && cargo test
