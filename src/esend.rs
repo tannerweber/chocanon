@@ -14,23 +14,22 @@
  */
 
 //! Module for sending emails by writing them as files.
-use std::fs::{File, create_dir};
-use std::fs::{create_dir_all};
+//use std::fs::create_dir_all;
+use std::fs::{File, create_dir_all};
 use std::io::prelude::*;
 
 const PATH: &str = "./emails/member";
 
-// creates a directory and doesn't error if 
+// creates a directory and doesn't error if
 // the directory already exists
 fn ensure_email_dir() {
-	let _ = create_dir_all(PATH);
+    let _ = create_dir_all(PATH);
 }
 
 //send_provider_reports
 //send_provider_manager
 //send_member_report
 //send_provider_directory
-
 
 //path: &str, add this as an argument later
 // remember to make private
@@ -40,29 +39,26 @@ pub fn send_email(
     subject: &str,
     body: &str,
 ) -> std::io::Result<()> {
-	
+    ensure_email_dir();
 
-	ensure_email_dir();
+    let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
+    let file_name = format!("{}/{}_{}.txt", PATH, to, timestamp);
 
-	let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
-	let file_name = format!("{}/{}_{}.txt", PATH, to, timestamp);
+    let mut file = File::create(&file_name)?;
 
+    writeln!(file, "To: {}", to)?;
+    writeln!(file, "From: {}", from)?;
+    writeln!(file, "Subject: {}", subject)?;
+    writeln!(
+        file,
+        "Date: {}\n",
+        chrono::Local::now().format("%Y-%m-%d %H-%M-%S")
+    )?;
 
-	let mut file = File::create(&file_name)?;
+    writeln!(file, "{}\n", body)?;
 
-	writeln!(file, "To: {}", to)?;
-	writeln!(file, "From: {}", from)?;
-	writeln!(file, "Subject: {}", subject)?;
-	writeln!(file, "Date: {}\n", chrono::Local::now().format("%Y-%m-%d %H-%M-%S"))?;
-	
-	writeln!(file, "{}\n", body)?;
-
-	Ok(())
-
-	
+    Ok(())
 }
-
-
 
 /*
 /// Writes an email as a file.
@@ -90,35 +86,32 @@ pub fn send_email(
 }
 */
 
-
 /*	esend::send_email(
-		"User 108",
-		"Chocanon Services",
-		"Regarding Follow up meeting",
-		"Lorem Ipsum however it goes"
-	).expect("This email failed to send");
-	
-	println!("Email testing concluded");
-*/	
+        "User 108",
+        "Chocanon Services",
+        "Regarding Follow up meeting",
+        "Lorem Ipsum however it goes"
+    ).expect("This email failed to send");
+
+    println!("Email testing concluded");
+*/
 
 #[cfg(test)]
 mod tests {
-	//super allows to use the entire file acting as if 
-	//it is in the scope of the functions that we want to call
-	//at least that's how I interpret it. 
-	use super::*;
-	#[test]
-	fn test_send_email() {
-		send_email(
+    //super allows to use the entire file acting as if
+    //it is in the scope of the functions that we want to call
+    //at least that's how I interpret it.
+    use super::*;
+    #[test]
+    fn test_send_email() {
+        send_email(
+            "User 108",
+            "Chocanon Services",
+            "Regarding Follow up meeting",
+            "Lorem Ipsum however it goes",
+        )
+        .expect("This email failed to send");
 
-		"User 108",
-		"Chocanon Services",
-		"Regarding Follow up meeting",
-		"Lorem Ipsum however it goes"
-	).expect("This email failed to send");
-	
-	println!("Email testing concluded");
-	}	
+        println!("Email testing concluded");
+    }
 }
-
-
