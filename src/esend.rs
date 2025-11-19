@@ -14,8 +14,8 @@
  */
 
 //! Module for sending emails by writing them as files.
-//use std::fs::create_dir_all;
 use std::fs::{File, create_dir_all};
+
 use std::io::prelude::*;
 
 const PATH: &str = "./emails/member";

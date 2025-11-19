@@ -15,8 +15,8 @@
 
 //! Chocaholics Anonymous project.
 
+use chocanon::db::DB;
 use std::error::Error;
-use chocanon::db::{DB};
 
 fn main() {
     println!("Hello world!");
