@@ -18,5 +18,7 @@ readme = "README.md"
 chrono = "0.4.42"
 ratatui = "0.29.0"
 rusqlite = { version = "0.37.0", features = ["bundled"] }
+color-eyre = "0.6"
+crossterm = "0.27"
 #lettre = "0.11"
 #tracing = "0.1"
