@@ -15,7 +15,7 @@
 
 //! Module for the Chocaholics Anonymous database.
 
-use rusqlite::Connection;
+use rusqlite::{Connection, OpenFlags};
 
 const MAX_NAME_SIZE: u32 = 25;
 const MAX_MEMBER_ID: u32 = 999999999; // 9 Digits
@@ -30,9 +30,6 @@ const DATE_SIZE: u32 = 10; // MM-DD-YYYY
 const MAX_SERVICE_CODE: u32 = 999999; // 6 Digits
 const MAX_COMMENT_SIZE: u32 = 100;
 
-/// Path to the ChocAn database file.
-const DB_PATH: &str = "./chocanon.db3";
-
 /// A ChocAn database.
 #[derive(Debug)]
 pub struct DB {
@@ -45,84 +42,77 @@ impl DB {
     /// # Failure
     ///
     /// Panics on failing to connect and create tables.
-    pub fn new() -> Self {
-        let conn: Connection;
-        match Connection::open_with_flags(
-            DB_PATH,
-            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE,
+    pub fn new(path: &str) -> Self {
+        let conn = match Connection::open_with_flags(
+            path,
+            OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
         ) {
-            Ok(c) => conn = c,
+            Ok(c) => c,
             Err(err) => panic!("Failed to connect to database: {}", err),
-        }
-        match conn.execute(
+        };
+        let mut sql = format!(
             "CREATE TABLE IF NOT EXISTS members (
-                id          INTEGER CHECK (id <= {}),
+                id          INTEGER NOT NULL PRIMARY KEY CHECK (id <= {}),
                 name        TEXT NOT NULL CHECK (length(name) <= {}),
                 address     TEXT NOT NULL CHECK (length(address) <= {}),
                 city        TEXT NOT NULL CHECK (length(city) <= {}),
                 state       TEXT NOT NULL CHECK (length(state) == {}),
                 zipcode     INTEGER CHECK (zipcode <= {}),
                 is_valid    BIT
-                PRIMARY KEY (id)
             )",
-            [
-                MAX_MEMBER_ID,
-                MAX_NAME_SIZE,
-                MAX_ADDRESS_SIZE,
-                MAX_CITY_SIZE,
-                STATE_SIZE.try_into().unwrap(),
-                MAX_ZIPCODE,
-            ],
-        ) {
-            Ok(n) => eprintln!("Updated {} rows.", n),
+            MAX_MEMBER_ID,
+            MAX_NAME_SIZE,
+            MAX_ADDRESS_SIZE,
+            MAX_CITY_SIZE,
+            STATE_SIZE,
+            MAX_ZIPCODE,
+        );
+        match conn.execute(&sql, []) {
+            Ok(_) => (),
             Err(err) => panic!("ERROR: {}", err),
         }
-        match conn.execute(
+        sql = format!(
             "CREATE TABLE IF NOT EXISTS providers (
-                id          INTEGER CHECK (id <= {}),
+                id          INTEGER NOT NULL PRIMARY KEY CHECK (id <= {}),
                 name        TEXT NOT NULL CHECK (length(name) <= {}),
                 address     TEXT NOT NULL CHECK (length(address) <= {}),
                 city        TEXT NOT NULL CHECK (length(city) <= {}),
                 state       TEXT NOT NULL CHECK (length(state) == {}),
                 zipcode     INTEGER CHECK (zipcode <= {}),
                 is_valid    BIT
-                PRIMARY KEY (id)
             )",
-            [
-                MAX_PROVIDER_ID,
-                MAX_NAME_SIZE,
-                MAX_ADDRESS_SIZE,
-                MAX_CITY_SIZE,
-                STATE_SIZE.try_into().unwrap(),
-                MAX_ZIPCODE,
-            ],
-        ) {
-            Ok(n) => eprintln!("Updated {} rows.", n),
+            MAX_PROVIDER_ID,
+            MAX_NAME_SIZE,
+            MAX_ADDRESS_SIZE,
+            MAX_CITY_SIZE,
+            STATE_SIZE,
+            MAX_ZIPCODE,
+        );
+        match conn.execute(&sql, []) {
+            Ok(_) => (),
             Err(err) => panic!("ERROR: {}", err),
         }
-        match conn.execute(
+        sql = format!(
             "CREATE TABLE IF NOT EXISTS consultations (
-                current_date_time   TEXT NOT NULL CHECK (length(name) <= {}),
+                current_date_time   TEXT NOT NULL CHECK (length(current_date_time) <= {}),
                 date                TEXT NOT NULL CHECK (length(date) == {}),
-                member_id           INTEGER CHECK (member_id <= {}),
-                provider_id         INTEGER CHECK (provider_id <= {}),
-                service_code        INTEGER CHECK (service_code <= {}),
-                comments            TEXT CHECK (length(comments) <= {}),
-                PRIMARY KEY (member_id)
+                member_id           INTEGER NOT NULL PRIMARY KEY CHECK (member_id <= {}),
+                provider_id         INTEGER NOT NULL CHECK (provider_id <= {}),
+                service_code        INTEGER NOT NULL CHECK (service_code <= {}),
+                comments            TEXT CHECK (length(comments) <= {})
             )",
-            [
-                DATE_TIME_SIZE,
-                DATE_SIZE,
-                MAX_MEMBER_ID,
-                MAX_PROVIDER_ID,
-                MAX_SERVICE_CODE,
-                MAX_COMMENT_SIZE,
-            ],
-        ) {
-            Ok(n) => eprintln!("Updated {} rows.", n),
+            DATE_TIME_SIZE,
+            DATE_SIZE,
+            MAX_MEMBER_ID,
+            MAX_PROVIDER_ID,
+            MAX_SERVICE_CODE,
+            MAX_COMMENT_SIZE,
+        );
+        match conn.execute(&sql, []) {
+            Ok(_) => (),
             Err(err) => panic!("ERROR: {}", err),
         }
-        DB { conn: conn }
+        DB { conn }
     }
 
     /// Sends out all member reports to all ChocAn members.
@@ -131,14 +121,23 @@ impl DB {
     ///
     /// Will return `Err` if any reports are not sent.
     pub fn send_member_reports() -> rusqlite::Result<bool, rusqlite::Error> {
+        // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
+        // ONLY SEND REPORTS FOR NOT SUSPENDED
         Ok(false)
     }
 
     pub fn send_provider_reports() -> rusqlite::Result<bool, rusqlite::Error> {
+        // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
+        // ONLY SEND REPORTS FOR NOT SUSPENDED
         Ok(false)
     }
 
     pub fn send_manager_report() -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
+    }
+
+    pub fn send_provider_directory() -> rusqlite::Result<bool, rusqlite::Error>
+    {
         Ok(false)
     }
 
@@ -162,47 +161,49 @@ impl DB {
     pub fn add_member(
         &self,
         person: &PersonInfo,
-    ) -> rusqlite::Result<(), rusqlite::Error> {
+    ) -> rusqlite::Result<bool, rusqlite::Error> {
         let state: String = person.location.state.iter().collect();
 
-        self.conn.execute(
+        let mut stmt = self.conn.prepare(
             "INSERT INTO members (
                 id,
                 name,
                 address,
                 city,
                 state,
-                zipcode
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            (
-                &person.id,
-                &person.name,
-                &person.location.address,
-                &person.location.city,
-                &state,
-                &person.location.zipcode,
-            ),
+                zipcode,
+                is_valid
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         )?;
-        Ok(())
+        stmt.execute(rusqlite::params![
+            &person.id,
+            &person.name,
+            &person.location.address,
+            &person.location.city,
+            &state,
+            &person.location.zipcode,
+            true,
+        ])?;
+        Ok(true)
     }
 
     pub fn add_provider(
         &self,
-        person: &PersonInfo,
+        _person: &PersonInfo,
     ) -> rusqlite::Result<bool, rusqlite::Error> {
         Ok(false)
     }
 
     pub fn remove_member(
         &self,
-        id: u32,
+        _id: u32,
     ) -> rusqlite::Result<bool, rusqlite::Error> {
         Ok(false)
     }
 
     pub fn remove_provider(
         &self,
-        id: u32,
+        _id: u32,
     ) -> rusqlite::Result<bool, rusqlite::Error> {
         Ok(false)
     }
@@ -246,7 +247,7 @@ impl PersonInfo {
         }
         Ok(PersonInfo {
             name: name.to_string(),
-            id: id,
+            id,
             location: location.clone(),
         })
     }
@@ -294,8 +295,8 @@ impl LocationInfo {
         Ok(LocationInfo {
             address: address.to_string(),
             city: city.to_string(),
-            state: state.clone(),
-            zipcode: zipcode.clone(),
+            state: *state,
+            zipcode: zipcode,
         })
     }
 }
@@ -304,9 +305,72 @@ impl LocationInfo {
 mod tests {
     use super::*;
 
+    /// Path to the ChocAn database file.
+    const TEST_DB_PATH: &str = "./test_chocanon.db3";
+
+    fn get_a_person() -> PersonInfo {
+        let location: LocationInfo =
+            LocationInfo::new("1234 Main st", "Portland", &['O', 'R'], 56789)
+                .unwrap();
+        let person: PersonInfo =
+            PersonInfo::new("Timmy Smith", 12345, &location).unwrap();
+        person
+    }
+
+    fn get_populated_database() -> Connection {
+        let conn: Connection;
+        match Connection::open_in_memory_with_flags(
+            OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
+        ) {
+            Ok(c) => conn = c,
+            Err(err) => panic!("Failed to connect to database: {}", err),
+        }
+        conn
+    }
+
+    #[test]
+    fn test_send_member_reports() {}
+
+    #[test]
+    fn test_send_provider_reports() {}
+
+    #[test]
+    fn test_send_manager_report() {}
+
+    #[test]
+    fn test_send_provider_directory() {}
+
+    #[test]
+    fn test_is_valid_member_id() {}
+
+    #[test]
+    fn test_is_valid_provider_id() {}
+
+    #[test]
+    fn test_is_valid_service_id() {}
+
     #[test]
     fn test_add_member() {
-        eprintln!("Running test_add_member");
-        assert_eq!(1, 1);
+        let _ = std::fs::remove_file(TEST_DB_PATH);
+        let db: DB = DB::new(TEST_DB_PATH);
+        let person: PersonInfo = get_a_person();
+        match db.add_member(&person) {
+            Ok(_) => (),
+            Err(err) => {
+                panic!("ERROR: {}", err);
+            }
+        }
     }
+
+    #[test]
+    fn test_add_provider() {}
+
+    #[test]
+    fn test_remove_member() {}
+
+    #[test]
+    fn test_remove_provider() {}
+
+    #[test]
+    fn test_add_consultation_record() {}
 }
