@@ -49,11 +49,27 @@ impl App {
         Ok(())
     }
     fn draw(&self, frame: &mut Frame) {
-        todo!()
+        frame.render_widget(self, frame.area());
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
         todo!()
+    }
+}
+
+impl Widget for &App {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let title = Line::from("Manager Terminal".bold());
+        let instructions = Line::from(vec![
+            "Add Member".into(),
+            "Remove member".into(),
+            "Request manager Reports".into(),
+            "<Q>".blue().bold(),
+        ]);
+        let block = Block::bordered()
+            .title(title.centered())
+            .title_bottom(instructions.centered())
+            .border_set(border::THICK);
     }
 }
 fn run_man_term() -> io::Result<()> {
