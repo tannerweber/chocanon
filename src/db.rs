@@ -26,7 +26,7 @@ const STATE_SIZE: usize = 2;
 const MAX_ZIPCODE: u32 = 99999; // 5 Digits
 //
 const DATE_TIME_SIZE: u32 = 19; // MM-DD-YYYY HH:MM:SS
-const DATE_SIZE: u32 = 10; // MM-DD-YYYY
+const SERVICE_DATE_SIZE: u32 = 10; // MM-DD-YYYY
 const MAX_SERVICE_CODE: u32 = 999999; // 6 Digits
 const MAX_COMMENT_SIZE: u32 = 100;
 
@@ -107,7 +107,7 @@ impl DB {
         sql = format!(
             "CREATE TABLE IF NOT EXISTS consultations (
                 current_date_time   TEXT NOT NULL CHECK (length(current_date_time) <= {}),
-                date                TEXT NOT NULL CHECK (length(date) == {}),
+                service_date        TEXT NOT NULL CHECK (length(service_date) == {}),
                 member_id           INTEGER NOT NULL PRIMARY KEY CHECK (
                     member_id <= {}
                     AND member_id >= 0
@@ -123,7 +123,7 @@ impl DB {
                 comments            TEXT CHECK (length(comments) <= {})
             )",
             DATE_TIME_SIZE,
-            DATE_SIZE,
+            SERVICE_DATE_SIZE,
             MAX_MEMBER_ID,
             MAX_PROVIDER_ID,
             MAX_SERVICE_CODE,
@@ -217,21 +217,46 @@ impl DB {
 
     pub fn remove_member(
         &self,
-        _id: u32,
+        id: u32,
     ) -> rusqlite::Result<bool, rusqlite::Error> {
-        Ok(false)
+        let mut stmt = self.conn.prepare("DELETE FROM members WHERE id = ?")?;
+        stmt.execute(rusqlite::params![id])?;
+        Ok(true)
     }
 
     pub fn remove_provider(
         &self,
-        _id: u32,
+        id: u32,
     ) -> rusqlite::Result<bool, rusqlite::Error> {
-        Ok(false)
+        let mut stmt =
+            self.conn.prepare("DELETE FROM providers WHERE id = ?")?;
+        stmt.execute(rusqlite::params![id])?;
+        Ok(true)
     }
 
-    pub fn add_consultation_record() -> rusqlite::Result<bool, rusqlite::Error>
-    {
-        Ok(false)
+    pub fn add_consultation_record(
+        &self,
+        consul: &Consultation,
+    ) -> rusqlite::Result<bool, rusqlite::Error> {
+        let mut stmt = self.conn.prepare(
+            "INSERT INTO consultations (
+                current_date_time,
+                service_date,
+                provider_id,
+                member_id,
+                service_code,
+                comments
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        )?;
+        stmt.execute(rusqlite::params![
+            &consul.curr_date,
+            &consul.service_date,
+            &consul.provider_id,
+            &consul.member_id,
+            &consul.service_code,
+            &consul.comments,
+        ])?;
+        Ok(true)
     }
 }
 
@@ -317,7 +342,80 @@ impl LocationInfo {
             address: address.to_string(),
             city: city.to_string(),
             state: *state,
-            zipcode: zipcode,
+            zipcode,
+        })
+    }
+}
+
+/// A consultation record between a member and provider.
+#[derive(Debug, Clone)]
+pub struct Consultation {
+    curr_date: String,
+    service_date: String,
+    provider_id: u32,
+    member_id: u32,
+    service_code: u32,
+    comments: String,
+}
+
+impl Consultation {
+    /// Create a consultation.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if a paramater is not valid.
+    pub fn new(
+        curr_date: &str,
+        service_date: &str,
+        provider_id: u32,
+        member_id: u32,
+        service_code: u32,
+        comments: &str,
+    ) -> Result<Self, String> {
+        if curr_date.chars().count() == DATE_TIME_SIZE.try_into().unwrap() {
+            return Err(format!(
+                "current date time must be equal to {} characters: {}",
+                DATE_TIME_SIZE, curr_date
+            ));
+        }
+        if service_date.chars().count() == SERVICE_DATE_SIZE.try_into().unwrap()
+        {
+            return Err(format!(
+                "service date must be equal to {} characters: {}",
+                SERVICE_DATE_SIZE, service_date
+            ));
+        }
+        if provider_id > MAX_PROVIDER_ID {
+            return Err(format!(
+                "provider_id must be less than or equal to {}: {}",
+                MAX_PROVIDER_ID, provider_id
+            ));
+        }
+        if member_id > MAX_MEMBER_ID {
+            return Err(format!(
+                "member_id must be less than or equal to {}: {}",
+                MAX_MEMBER_ID, member_id
+            ));
+        }
+        if service_code > MAX_SERVICE_CODE {
+            return Err(format!(
+                "service_code must be less than or equal to {}: {}",
+                MAX_SERVICE_CODE, service_code
+            ));
+        }
+        if comments.chars().count() == MAX_COMMENT_SIZE.try_into().unwrap() {
+            return Err(format!(
+                "comments must be less than or equal to {} characters: {}",
+                MAX_COMMENT_SIZE, comments
+            ));
+        }
+        Ok(Consultation {
+            curr_date: curr_date.to_string(),
+            service_date: service_date.to_string(),
+            provider_id,
+            member_id,
+            service_code,
+            comments: comments.to_string(),
         })
     }
 }
