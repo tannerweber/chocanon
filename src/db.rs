@@ -52,12 +52,18 @@ impl DB {
         };
         let mut sql = format!(
             "CREATE TABLE IF NOT EXISTS members (
-                id          INTEGER NOT NULL PRIMARY KEY CHECK (id <= {}),
+                id          INTEGER NOT NULL PRIMARY KEY CHECK (
+                    id <= {}
+                    AND id >= 0
+                ),
                 name        TEXT NOT NULL CHECK (length(name) <= {}),
                 address     TEXT NOT NULL CHECK (length(address) <= {}),
                 city        TEXT NOT NULL CHECK (length(city) <= {}),
                 state       TEXT NOT NULL CHECK (length(state) == {}),
-                zipcode     INTEGER CHECK (zipcode <= {}),
+                zipcode     INTEGER NOT NULL CHECK (
+                    zipcode <= {}
+                    AND zipcode >= 0
+                ),
                 is_valid    BIT
             )",
             MAX_MEMBER_ID,
@@ -73,12 +79,18 @@ impl DB {
         }
         sql = format!(
             "CREATE TABLE IF NOT EXISTS providers (
-                id          INTEGER NOT NULL PRIMARY KEY CHECK (id <= {}),
+                id          INTEGER NOT NULL PRIMARY KEY CHECK (
+                    id <= {}
+                    AND id >= 0
+                ),
                 name        TEXT NOT NULL CHECK (length(name) <= {}),
                 address     TEXT NOT NULL CHECK (length(address) <= {}),
                 city        TEXT NOT NULL CHECK (length(city) <= {}),
                 state       TEXT NOT NULL CHECK (length(state) == {}),
-                zipcode     INTEGER CHECK (zipcode <= {}),
+                zipcode     INTEGER NOT NULL CHECK (
+                    zipcode <= {}
+                    AND zipcode >= 0
+                ),
                 is_valid    BIT
             )",
             MAX_PROVIDER_ID,
@@ -96,9 +108,18 @@ impl DB {
             "CREATE TABLE IF NOT EXISTS consultations (
                 current_date_time   TEXT NOT NULL CHECK (length(current_date_time) <= {}),
                 date                TEXT NOT NULL CHECK (length(date) == {}),
-                member_id           INTEGER NOT NULL PRIMARY KEY CHECK (member_id <= {}),
-                provider_id         INTEGER NOT NULL CHECK (provider_id <= {}),
-                service_code        INTEGER NOT NULL CHECK (service_code <= {}),
+                member_id           INTEGER NOT NULL PRIMARY KEY CHECK (
+                    member_id <= {}
+                    AND member_id >= 0
+                ),
+                provider_id         INTEGER NOT NULL CHECK (
+                    provider_id <= {}
+                    AND provider_id >= 0
+                ),
+                service_code        INTEGER NOT NULL CHECK (
+                    service_code <= {}
+                    AND service_code >= 0
+                ),
                 comments            TEXT CHECK (length(comments) <= {})
             )",
             DATE_TIME_SIZE,
@@ -308,6 +329,10 @@ mod tests {
     /// Path to the ChocAn database file.
     const TEST_DB_PATH: &str = "./test_chocanon.db3";
 
+    fn remove_test_db() {
+        let _ = std::fs::remove_file(TEST_DB_PATH);
+    }
+
     fn get_a_person() -> PersonInfo {
         let location: LocationInfo =
             LocationInfo::new("1234 Main st", "Portland", &['O', 'R'], 56789)
@@ -351,7 +376,7 @@ mod tests {
 
     #[test]
     fn test_add_member() {
-        let _ = std::fs::remove_file(TEST_DB_PATH);
+        remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH);
         let person: PersonInfo = get_a_person();
         match db.add_member(&person) {
