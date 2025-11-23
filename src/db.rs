@@ -108,11 +108,11 @@ impl DB {
             "CREATE TABLE IF NOT EXISTS consultations (
                 current_date_time   TEXT NOT NULL CHECK (length(current_date_time) <= {}),
                 service_date        TEXT NOT NULL CHECK (length(service_date) == {}),
-                member_id           INTEGER NOT NULL PRIMARY KEY CHECK (
+                member_id           INTEGER NOT NULL CHECK (
                     member_id <= {}
                     AND member_id >= 0
                 ),
-                provider_id         INTEGER NOT NULL CHECK (
+                provider_id         INTEGER NOT NULL PRIMARY KEY CHECK (
                     provider_id <= {}
                     AND provider_id >= 0
                 ),
@@ -258,6 +258,40 @@ impl DB {
         ])?;
         Ok(true)
     }
+
+    fn retrieve_consultations(
+        &self,
+        id: u32,
+    ) -> rusqlite::Result<Vec<Consultation>, rusqlite::Error> {
+        let mut stmt = self.conn.prepare(
+            "SELECT
+                current_date_time,
+                service_date,
+                member_id,
+                provider_id,
+                service_code,
+                comments,
+            FROM consultations WHERE provider_id == ?",
+        )?;
+        let mut consul_iter = stmt.query_map(rusqlite::params![id], |row| {
+            Ok(Consultation {
+                curr_date: row.get(0)?,
+                service_date: row.get(1)?,
+                provider_id: row.get(2)?,
+                member_id: row.get(3)?,
+                service_code: row.get(4)?,
+                comments: row.get(5)?,
+            })
+        })?;
+        if consul_iter.next().is_none() {
+            return Err(rusqlite::Error::QueryReturnedNoRows);
+        }
+        let mut consuls = Vec::new();
+        for consul in consul_iter {
+            consuls.push(consul.unwrap());
+        }
+        Ok(consuls)
+    }
 }
 
 /// Information on a person in the ChocAn database.
@@ -372,13 +406,13 @@ impl Consultation {
         service_code: u32,
         comments: &str,
     ) -> Result<Self, String> {
-        if curr_date.chars().count() == DATE_TIME_SIZE.try_into().unwrap() {
+        if curr_date.chars().count() != DATE_TIME_SIZE.try_into().unwrap() {
             return Err(format!(
                 "current date time must be equal to {} characters: {}",
                 DATE_TIME_SIZE, curr_date
             ));
         }
-        if service_date.chars().count() == SERVICE_DATE_SIZE.try_into().unwrap()
+        if service_date.chars().count() != SERVICE_DATE_SIZE.try_into().unwrap()
         {
             return Err(format!(
                 "service date must be equal to {} characters: {}",
@@ -436,8 +470,21 @@ mod tests {
             LocationInfo::new("1234 Main st", "Portland", &['O', 'R'], 56789)
                 .unwrap();
         let person: PersonInfo =
-            PersonInfo::new("Timmy Smith", 12345, &location).unwrap();
+            PersonInfo::new("Timmy Smith", 123456789, &location).unwrap();
         person
+    }
+
+    fn get_a_consultation() -> Consultation {
+        let consul: Consultation = Consultation::new(
+            "01-13-2025 03:45:25",
+            "01-13-2025",
+            123456789,
+            987654321,
+            123456,
+            "This is a comment.",
+        )
+        .unwrap();
+        consul
     }
 
     fn get_populated_database() -> Connection {
@@ -495,5 +542,15 @@ mod tests {
     fn test_remove_provider() {}
 
     #[test]
-    fn test_add_consultation_record() {}
+    fn test_add_consultation_record() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH);
+        let consul: Consultation = get_a_consultation();
+        match db.add_consultation_record(&consul) {
+            Ok(_) => (),
+            Err(err) => {
+                panic!("ERROR: {}", err);
+            }
+        }
+    }
 }
