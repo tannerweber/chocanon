@@ -157,21 +157,39 @@ impl DB {
         Ok(())
     }
 
-    pub fn send_provider_directory() -> rusqlite::Result<(), rusqlite::Error>
-    {
+    pub fn send_provider_directory() -> rusqlite::Result<(), rusqlite::Error> {
         Ok(())
     }
 
-    pub fn is_valid_member_id() -> rusqlite::Result<(), rusqlite::Error> {
-        Ok(())
+    pub fn is_valid_member_id(
+        &self,
+        id: u32,
+    ) -> rusqlite::Result<bool, rusqlite::Error> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT COUNT(*) FROM members WHERE id = ?")?;
+        let count: u32 =
+            stmt.query_row(rusqlite::params![id], |row| row.get(0))?;
+        Ok(count > 0)
     }
 
-    pub fn is_valid_provider_id() -> rusqlite::Result<(), rusqlite::Error> {
-        Ok(())
+    pub fn is_valid_provider_id(
+        &self,
+        id: u32,
+    ) -> rusqlite::Result<bool, rusqlite::Error> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT COUNT(*) FROM providers WHERE id = ?")?;
+        let count: u32 =
+            stmt.query_row(rusqlite::params![id], |row| row.get(0))?;
+        Ok(count > 0)
     }
 
-    pub fn is_valid_service_id() -> rusqlite::Result<(), rusqlite::Error> {
-        Ok(())
+    pub fn is_valid_service_id(
+        &self,
+        _id: u32,
+    ) -> rusqlite::Result<bool, rusqlite::Error> {
+        Ok(false)
     }
 
     /// Adds a member to the database.
@@ -271,7 +289,7 @@ impl DB {
                 provider_id,
                 service_code,
                 comments,
-            FROM consultations WHERE provider_id == ?",
+            FROM consultations WHERE provider_id = ?",
         )?;
         let mut consul_iter = stmt.query_map(rusqlite::params![id], |row| {
             Ok(Consultation {
