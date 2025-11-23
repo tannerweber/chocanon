@@ -141,37 +141,37 @@ impl DB {
     /// # Failure
     ///
     /// Will return `Err` if any reports are not sent.
-    pub fn send_member_reports() -> rusqlite::Result<bool, rusqlite::Error> {
+    pub fn send_member_reports() -> rusqlite::Result<(), rusqlite::Error> {
         // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
         // ONLY SEND REPORTS FOR NOT SUSPENDED
-        Ok(false)
+        Ok(())
     }
 
-    pub fn send_provider_reports() -> rusqlite::Result<bool, rusqlite::Error> {
+    pub fn send_provider_reports() -> rusqlite::Result<(), rusqlite::Error> {
         // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
         // ONLY SEND REPORTS FOR NOT SUSPENDED
-        Ok(false)
+        Ok(())
     }
 
-    pub fn send_manager_report() -> rusqlite::Result<bool, rusqlite::Error> {
-        Ok(false)
+    pub fn send_manager_report() -> rusqlite::Result<(), rusqlite::Error> {
+        Ok(())
     }
 
-    pub fn send_provider_directory() -> rusqlite::Result<bool, rusqlite::Error>
+    pub fn send_provider_directory() -> rusqlite::Result<(), rusqlite::Error>
     {
-        Ok(false)
+        Ok(())
     }
 
-    pub fn is_valid_member_id() -> rusqlite::Result<bool, rusqlite::Error> {
-        Ok(false)
+    pub fn is_valid_member_id() -> rusqlite::Result<(), rusqlite::Error> {
+        Ok(())
     }
 
-    pub fn is_valid_provider_id() -> rusqlite::Result<bool, rusqlite::Error> {
-        Ok(false)
+    pub fn is_valid_provider_id() -> rusqlite::Result<(), rusqlite::Error> {
+        Ok(())
     }
 
-    pub fn is_valid_service_id() -> rusqlite::Result<bool, rusqlite::Error> {
-        Ok(false)
+    pub fn is_valid_service_id() -> rusqlite::Result<(), rusqlite::Error> {
+        Ok(())
     }
 
     /// Adds a member to the database.
@@ -182,7 +182,7 @@ impl DB {
     pub fn add_member(
         &self,
         person: &PersonInfo,
-    ) -> rusqlite::Result<bool, rusqlite::Error> {
+    ) -> rusqlite::Result<(), rusqlite::Error> {
         let state: String = person.location.state.iter().collect();
 
         let mut stmt = self.conn.prepare(
@@ -205,14 +205,14 @@ impl DB {
             &person.location.zipcode,
             true,
         ])?;
-        Ok(true)
+        Ok(())
     }
 
     pub fn add_provider(
         &self,
         _person: &PersonInfo,
-    ) -> rusqlite::Result<bool, rusqlite::Error> {
-        Ok(false)
+    ) -> rusqlite::Result<(), rusqlite::Error> {
+        Ok(())
     }
 
     pub fn remove_member(
@@ -237,7 +237,7 @@ impl DB {
     pub fn add_consultation_record(
         &self,
         consul: &Consultation,
-    ) -> rusqlite::Result<bool, rusqlite::Error> {
+    ) -> rusqlite::Result<(), rusqlite::Error> {
         let mut stmt = self.conn.prepare(
             "INSERT INTO consultations (
                 current_date_time,
@@ -256,7 +256,7 @@ impl DB {
             &consul.service_code,
             &consul.comments,
         ])?;
-        Ok(true)
+        Ok(())
     }
 
     fn retrieve_consultations(
