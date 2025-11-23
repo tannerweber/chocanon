@@ -218,20 +218,20 @@ impl DB {
     pub fn remove_member(
         &self,
         id: u32,
-    ) -> rusqlite::Result<bool, rusqlite::Error> {
+    ) -> rusqlite::Result<(), rusqlite::Error> {
         let mut stmt = self.conn.prepare("DELETE FROM members WHERE id = ?")?;
         stmt.execute(rusqlite::params![id])?;
-        Ok(true)
+        Ok(())
     }
 
     pub fn remove_provider(
         &self,
         id: u32,
-    ) -> rusqlite::Result<bool, rusqlite::Error> {
+    ) -> rusqlite::Result<(), rusqlite::Error> {
         let mut stmt =
             self.conn.prepare("DELETE FROM providers WHERE id = ?")?;
         stmt.execute(rusqlite::params![id])?;
-        Ok(true)
+        Ok(())
     }
 
     pub fn add_consultation_record(
@@ -487,15 +487,21 @@ mod tests {
         consul
     }
 
-    fn get_populated_database() -> Connection {
-        let conn: Connection;
-        match Connection::open_in_memory_with_flags(
-            OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
-        ) {
-            Ok(c) => conn = c,
-            Err(err) => panic!("Failed to connect to database: {}", err),
-        }
-        conn
+    fn get_populated_database() -> DB {
+        let db = DB::new(TEST_DB_PATH);
+        let location: LocationInfo = LocationInfo {
+            address: "1234 main st".to_string(),
+            city: "Portland".to_string(),
+            state: ['O', 'R'],
+            zipcode: 12345,
+        };
+        let person: PersonInfo = PersonInfo {
+            id: 123456789,
+            name: "First Last".to_string(),
+            location: location,
+        };
+        db.add_member(&person).unwrap();
+        db
     }
 
     #[test]
@@ -536,7 +542,13 @@ mod tests {
     fn test_add_provider() {}
 
     #[test]
-    fn test_remove_member() {}
+    fn test_remove_member() {
+        let db = get_populated_database();
+        match db.remove_member(123456789) {
+            Ok(_) => (),
+            Err(err) => panic!("ERROR: {}", err),
+        }
+    }
 
     #[test]
     fn test_remove_provider() {}
