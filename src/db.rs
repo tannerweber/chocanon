@@ -73,6 +73,10 @@ pub struct DB {
 impl DB {
     /// Create a ChocAn database
     ///
+    /// # Arguments
+    ///
+    /// * `path` - The path to the database file (E.g. `./database.db3`).
+    ///
     /// # Failure
     ///
     /// Panics on failing to connect and create tables.
@@ -461,6 +465,13 @@ pub struct PersonInfo {
 impl PersonInfo {
     /// Create a person.
     ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the person. Constrained by `MAX_NAME_SIZE`.
+    /// * `id` - The unique id for the person. Constrained by `MAX_MEMBER_ID`.
+    /// * `location` - The location of the person.
+    /// * `email` - The email of the person.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if a paramater is not valid.
@@ -508,6 +519,13 @@ pub struct LocationInfo {
 
 impl LocationInfo {
     /// Create a location.
+    ///
+    /// # Arguments
+    ///
+    /// * `address` - The address. Constrained by `MAX_ADDRESS_SIZE`.
+    /// * `city` - The city name. Constrained by `MAX_CITY_SIZE`.
+    /// * `state` - The two character state name. Constrained by `STATE_SIZE`.
+    /// * `zipcode` - The zipcode number. Constrained by `MAX_ZIPCODE`.
     ///
     /// # Failure
     ///
@@ -558,6 +576,21 @@ pub struct Consultation {
 
 impl Consultation {
     /// Create a consultation.
+    ///
+    /// # Arguments
+    ///
+    /// * `curr_date` - The current date time string when the email is being
+    ///   sent. Constrained by `DATE_TIME_SIZE`.
+    /// * `service_date` - The date when the consultation occured.
+    ///   Constrained by `SERVICE_DATE_SIZE`.
+    /// * `provider_id` - The id of the provider. Constrained
+    ///   by `MAX_PROVIDER_ID`.
+    /// * `member_id` - The id of the member. Constrained
+    ///   by `MAX_MEMBER_ID`.
+    /// * `service_code` - The code of the service issued. Constrained
+    ///   by `MAX_SERVICE_CODE`.
+    /// * `comments` - Comments on the service. Constrained
+    ///   by `MAX_COMMENT_SIZE`.
     ///
     /// # Failure
     ///
