@@ -197,19 +197,15 @@ impl DB {
                 Ok(name) => {
                     let subject: String =
                         "Member Report for ".to_owned() + &name;
-                    match send_member_report(
+                    send_member_report(
                         "temp@mail.com",
                         CHOCAN_EMAIL,
                         &subject,
                         "Body",
-                    ) {
-                        Ok(_) => (),
-                        Err(_) => (),
-                    }
+                    )
+                    .map_err(Error::Io)?;
                 }
-                Err(err) => {
-                    eprintln!("ERROR:  {}", err);
-                }
+                Err(_) => (),
             }
         }
         Ok(())
