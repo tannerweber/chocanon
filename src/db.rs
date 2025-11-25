@@ -193,7 +193,7 @@ impl DB {
             .map_err(Error::Sql)?;
         for (name, email) in rows.flatten() {
             let subject: String = "Member Report for ".to_owned() + &name;
-            send_member_report(&email, CHOCAN_EMAIL, &subject, "Body")
+            send_member_report(&email, CHOCAN_EMAIL, &subject, "Body", &name)
                 .map_err(Error::Io)?;
         }
         Ok(())
@@ -233,6 +233,7 @@ impl DB {
             CHOCAN_EMAIL,
             "Provider Directory",
             "The body",
+            "Provider",
         )
         .map_err(Error::Io)?;
         Ok(())

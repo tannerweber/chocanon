@@ -35,59 +35,136 @@ fn ensure_email_dir() {
     let _ = create_dir_all(EmailPath::MANAGER);
 }
 
+/// Sends an email for a provider report.
+///
+/// # Arguments
+///
+/// * `to` - The email address of the recipient.
+/// * `from` - The email address of the sender (ChocAn).
+/// * `subject` - The subject line of the email.
+/// * `body` - The entire body of the email.
+/// * `recipient_name` - The name of the recipient.
+///
+/// # Failure
+///
+/// Will return `Err` for IO errors.
 pub fn send_provider_report(
     to: &str,
     from: &str,
     subject: &str,
     body: &str,
+    recipient_name: &str,
 ) -> std::io::Result<()> {
-    _ = send_email(to, from, subject, body, EmailPath::PROVIDER);
+    _ = send_email(
+        to,
+        from,
+        subject,
+        body,
+        recipient_name,
+        EmailPath::PROVIDER,
+    );
     Ok(())
 }
 
+/// Sends an email for a member report.
+///
+/// # Arguments
+///
+/// * `to` - The email address of the recipient.
+/// * `from` - The email address of the sender (ChocAn).
+/// * `subject` - The subject line of the email.
+/// * `body` - The entire body of the email.
+/// * `recipient_name` - The name of the recipient.
+///
+/// # Failure
+///
+/// Will return `Err` for IO errors.
 pub fn send_member_report(
     to: &str,
     from: &str,
     subject: &str,
     body: &str,
+    recipient_name: &str,
 ) -> std::io::Result<()> {
-    _ = send_email(to, from, subject, body, EmailPath::MEMBER);
+    _ = send_email(to, from, subject, body, recipient_name, EmailPath::MEMBER);
     Ok(())
 }
 
+/// Sends an email for a manager report.
+///
+/// # Arguments
+///
+/// * `to` - The email address of the recipient.
+/// * `from` - The email address of the sender (ChocAn).
+/// * `subject` - The subject line of the email.
+/// * `body` - The entire body of the email.
+/// * `recipient_name` - The name of the recipient.
+///
+/// # Failure
+///
+/// Will return `Err` for IO errors.
 pub fn send_manager_report(
     to: &str,
     from: &str,
     subject: &str,
     body: &str,
+    recipient_name: &str,
 ) -> std::io::Result<()> {
-    _ = send_email(to, from, subject, body, EmailPath::MANAGER);
+    _ = send_email(to, from, subject, body, recipient_name, EmailPath::MANAGER);
     Ok(())
 }
 
+/// Sends an email for a provider directory.
+///
+/// # Arguments
+///
+/// * `to` - The email address of the recipient.
+/// * `from` - The email address of the sender (ChocAn).
+/// * `subject` - The subject line of the email.
+/// * `body` - The entire body of the email.
+/// * `recipient_name` - The name of the recipient.
+///
+/// # Failure
+///
+/// Will return `Err` for IO errors.
 pub fn send_provider_directory(
     to: &str,
     from: &str,
     subject: &str,
     body: &str,
+    recipient_name: &str,
 ) -> std::io::Result<()> {
-    send_email(to, from, subject, body, EmailPath::PROVIDER)?;
+    send_email(to, from, subject, body, recipient_name, EmailPath::PROVIDER)?;
     Ok(())
 }
 
-//path: &str, add this as an argument later
-// remember to make private
-pub fn send_email(
+/// Writes out an email to the specified path.
+///
+/// # Arguments
+///
+/// * `to` - The email address of the recipient.
+/// * `from` - The email address of the sender (ChocAn).
+/// * `subject` - The subject line of the email.
+/// * `body` - The entire body of the email.
+/// * `recipient_name` - The name of the recipient.
+/// * `path` - The path to send the file, not including the file name.
+///
+/// # Failure
+///
+/// Will return `Err` for IO errors.
+fn send_email(
     to: &str,
     from: &str,
     subject: &str,
     body: &str,
+    recipient_name: &str,
     path: &str,
 ) -> std::io::Result<()> {
     ensure_email_dir();
 
-    let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
-    let file_name = format!("{}/{}_{}.txt", path, to, timestamp);
+    let timestamp =
+        chrono::Local::now().format("%m-%d-%Y_%H:%M:%S").to_string();
+    let file_name = format!("{}/{}_{}.txt", path, recipient_name, timestamp);
     let mut file = File::create(&file_name)?;
 
     writeln!(file, "To: {}", to)?;
@@ -113,6 +190,7 @@ mod tests {
             "Chocanon Services",
             "Regarding Follow up meeting",
             "This is te body of the email.",
+            "Name",
             EmailPath::MEMBER,
         ) {
             Ok(_) => (),
