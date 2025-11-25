@@ -63,7 +63,7 @@ impl DB {
     ///
     /// # Failure
     ///
-    /// Panics on failing to connect and create tables.
+    /// Will return `Err` if database could not be established.
     pub fn new(path: &str) -> Result<Self, Error> {
         let conn = Connection::open_with_flags(
             path,
@@ -256,6 +256,10 @@ impl DB {
 
     /// Sends out a the provider directory to the specified email.
     ///
+    /// # Arguments
+    ///
+    /// * `email` - The email address to send the provider directory to.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if not sent.
@@ -272,6 +276,10 @@ impl DB {
     }
 
     /// Checks if the member id belongs to a member in the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The member id to check.
     ///
     /// # Success
     ///
@@ -296,6 +304,10 @@ impl DB {
 
     /// Checks if the provider id belongs to a provider in the database.
     ///
+    /// # Arguments
+    ///
+    /// * `id` - The provider id to check.
+    ///
     /// # Success
     ///
     /// Will return `Ok` wrapping `true` if valid person found.
@@ -319,6 +331,10 @@ impl DB {
 
     /// Checks if the service id belongs to a service in the directory.
     ///
+    /// # Arguments
+    ///
+    /// * `id` - The service id to check.
+    ///
     /// # Success
     ///
     /// Will return `Ok` wrapping `true` if valid service found.
@@ -339,6 +355,10 @@ impl DB {
     }
 
     /// Adds a member to the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `person` - The member to add to the database.
     ///
     /// # Failure
     ///
@@ -377,6 +397,10 @@ impl DB {
 
     /// Adds a provider to the database.
     ///
+    /// # Arguments
+    ///
+    /// * `person` - The provider to add to the database.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if the provider was not added.
@@ -414,6 +438,10 @@ impl DB {
 
     /// Removes a member from the database.
     ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the member to remove.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if the member was not removed.
@@ -428,6 +456,10 @@ impl DB {
 
     /// Removes a provider from the database.
     ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the provider to remove.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if the provider was not removed.
@@ -441,6 +473,10 @@ impl DB {
     }
 
     /// Adds a consultation record to the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `consul` - The consultation to add to the database.
     ///
     /// # Failure
     ///
