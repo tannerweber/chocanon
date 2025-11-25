@@ -239,7 +239,7 @@ impl DB {
                 member_id,
                 provider_id,
                 service_code,
-                comments,
+                comments
             FROM consultations",
             )
             .map_err(Error::Sql)?;
@@ -777,6 +777,19 @@ mod tests {
         person
     }
 
+    fn create_a_unique_consultation(provider_id: u32) -> Consultation {
+        let consul = Consultation::new(
+            "01-13-2025 03:45:30",
+            "01-12-2025",
+            provider_id,
+            777777777,
+            123456,
+            "This is a comment for a consultation",
+        )
+        .unwrap();
+        consul
+    }
+
     fn get_a_consultation() -> Consultation {
         let consul: Consultation = Consultation::new(
             "01-13-2025 03:45:25",
@@ -802,11 +815,16 @@ mod tests {
     fn test_send_member_reports() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
-        db.add_member(&create_a_unique_person("Name1", 1)).unwrap();
-        db.add_member(&create_a_unique_person("Name2", 2)).unwrap();
-        db.add_member(&create_a_unique_person("Name3", 3)).unwrap();
-        db.add_member(&create_a_unique_person("Name4", 4)).unwrap();
-        db.add_member(&create_a_unique_person("Name5", 5)).unwrap();
+        db.add_member(&create_a_unique_person("Member Name1", 1))
+            .unwrap();
+        db.add_member(&create_a_unique_person("Member Name2", 2))
+            .unwrap();
+        db.add_member(&create_a_unique_person("Member Name3", 3))
+            .unwrap();
+        db.add_member(&create_a_unique_person("Member Name4", 4))
+            .unwrap();
+        db.add_member(&create_a_unique_person("Member Name5", 5))
+            .unwrap();
         match db.send_member_reports() {
             Ok(_) => (),
             Err(err) => panic!("send_member_reports() ERROR: {}", err),
@@ -817,7 +835,24 @@ mod tests {
     fn test_send_provider_reports() {}
 
     #[test]
-    fn test_send_manager_report() {}
+    fn test_send_manager_report() {
+        remove_test_db();
+        let db = DB::new(TEST_DB_PATH).unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(1))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(2))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(4))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(5))
+            .unwrap();
+        match db.send_manager_report() {
+            Ok(_) => (),
+            Err(err) => panic!("send_manager_report() ERROR: {}", err),
+        }
+    }
 
     #[test]
     fn test_send_provider_directory() {}
