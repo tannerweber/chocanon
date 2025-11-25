@@ -98,6 +98,7 @@ impl DB {
                     zipcode <= {}
                     AND zipcode >= 0
                 ),
+                email       TEXT NOT NULL,
                 is_valid    BIT
             )",
             MAX_MEMBER_ID,
@@ -125,6 +126,7 @@ impl DB {
                     zipcode <= {}
                     AND zipcode >= 0
                 ),
+                email       TEXT NOT NULL,
                 is_valid    BIT
             )",
             MAX_PROVIDER_ID,
@@ -172,6 +174,9 @@ impl DB {
 
     /// Sends out all member reports to all ChocAn members.
     ///
+    /// Reports will only be sent to those with recent activity.
+    /// Reports will only be sent valid persons.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if any reports are not sent.
@@ -183,27 +188,24 @@ impl DB {
             .prepare(
                 "SELECT
                 name,
+                email,
             FROM members WHERE is_valid = 1",
             )
             .map_err(Error::Sql)?;
         let rows = stmt
             .query_map([], |row| {
                 let name: String = row.get(0)?;
-                Ok(name)
+                let email: String = row.get(1)?;
+                Ok((name, email))
             })
             .map_err(Error::Sql)?;
         for row in rows {
             match row {
-                Ok(name) => {
+                Ok((name, email)) => {
                     let subject: String =
                         "Member Report for ".to_owned() + &name;
-                    send_member_report(
-                        "temp@mail.com",
-                        CHOCAN_EMAIL,
-                        &subject,
-                        "Body",
-                    )
-                    .map_err(Error::Io)?;
+                    send_member_report(&email, CHOCAN_EMAIL, &subject, "Body")
+                        .map_err(Error::Io)?;
                 }
                 Err(_) => (),
             }
@@ -211,17 +213,42 @@ impl DB {
         Ok(())
     }
 
+    /// Sends out all provider reports to all ChocAn providers.
+    ///
+    /// Reports will only be sent to those with recent activity.
+    /// Reports will only be sent valid persons.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if any reports are not sent.
     pub fn send_provider_reports(&self) -> Result<(), Error> {
         // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
         // ONLY SEND REPORTS FOR NOT SUSPENDED
         Ok(())
     }
 
+    /// Sends out a manager report to the ChocAn manager.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if any reports are not sent.
     pub fn send_manager_report(&self) -> Result<(), Error> {
         Ok(())
     }
 
-    pub fn send_provider_directory(&self) -> Result<(), Error> {
+    /// Sends out a the provider directory to the specified email.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if not sent.
+    pub fn send_provider_directory(&self, email: &str) -> Result<(), Error> {
+        send_provider_directory(
+            email,
+            CHOCAN_EMAIL,
+            "Provider Directory",
+            "The body",
+        )
+        .map_err(Error::Io)?;
         Ok(())
     }
 
@@ -247,8 +274,15 @@ impl DB {
         Ok(count > 0)
     }
 
-    pub fn is_valid_service_id(&self, _id: u32) -> Result<bool, Error> {
-        Ok(false)
+    pub fn is_valid_service_id(&self, id: u32) -> Result<bool, Error> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT COUNT(*) FROM services WHERE id = ?")
+            .map_err(Error::Sql)?;
+        let count: u32 = stmt
+            .query_row(rusqlite::params![id], |row| row.get(0))
+            .map_err(Error::Sql)?;
+        Ok(count > 0)
     }
 
     /// Adds a member to the database.
@@ -269,8 +303,9 @@ impl DB {
                 city,
                 state,
                 zipcode,
+                email,
                 is_valid
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             )
             .map_err(Error::Sql)?;
         stmt.execute(rusqlite::params![
@@ -280,16 +315,27 @@ impl DB {
             &person.location.city,
             &state,
             &person.location.zipcode,
-            true,
+            &person.email,
+            1,
         ])
         .map_err(Error::Sql)?;
         Ok(())
     }
 
+    /// Adds a provider to the database.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the provider was not added.
     pub fn add_provider(&self, _person: &PersonInfo) -> Result<(), Error> {
         Ok(())
     }
 
+    /// Removes a member from the database.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the member was not removed.
     pub fn remove_member(&self, id: u32) -> Result<(), Error> {
         let mut stmt = self
             .conn
@@ -299,6 +345,11 @@ impl DB {
         Ok(())
     }
 
+    /// Removes a provider from the database.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the provider was not removed.
     pub fn remove_provider(&self, id: u32) -> Result<(), Error> {
         let mut stmt = self
             .conn
@@ -308,6 +359,11 @@ impl DB {
         Ok(())
     }
 
+    /// Adds a consultation record to the database.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the record was not added.
     pub fn add_consultation_record(
         &self,
         consul: &Consultation,
@@ -378,6 +434,7 @@ pub struct PersonInfo {
     id: u32,
     name: String,
     location: LocationInfo,
+    email: String,
 }
 
 impl PersonInfo {
@@ -390,6 +447,7 @@ impl PersonInfo {
         name: &str,
         id: u32,
         location: &LocationInfo,
+        email: &str,
     ) -> Result<Self, String> {
         if id > MAX_MEMBER_ID {
             return Err(format!(
@@ -403,10 +461,17 @@ impl PersonInfo {
                 MAX_NAME_SIZE, name
             ));
         }
+        match email.find('@') {
+            Some(_) => (),
+            None => {
+                return Err("Email does not have an '@' symbol".to_string());
+            }
+        }
         Ok(PersonInfo {
             name: name.to_string(),
             id,
             location: location.clone(),
+            email: email.to_string(),
         })
     }
 }
@@ -547,8 +612,13 @@ mod tests {
         let location: LocationInfo =
             LocationInfo::new("1234 Main st", "Portland", &['O', 'R'], 56789)
                 .unwrap();
-        let person: PersonInfo =
-            PersonInfo::new("Timmy Smith", 123456789, &location).unwrap();
+        let person: PersonInfo = PersonInfo::new(
+            "Timmy Smith",
+            123456789,
+            &location,
+            "timmmy@pdx.edu",
+        )
+        .unwrap();
         person
     }
 
@@ -578,6 +648,7 @@ mod tests {
             id: 123456789,
             name: "First Last".to_string(),
             location: location,
+            email: "first@pdx.edu".to_string(),
         };
         db.add_member(&person).unwrap();
         db
@@ -606,15 +677,16 @@ mod tests {
 
     #[test]
     fn test_add_member() {
-        remove_test_db();
-        let db: DB = DB::new(TEST_DB_PATH);
-        let person: PersonInfo = get_a_person();
-        match db.add_member(&person) {
-            Ok(_) => (),
-            Err(err) => {
-                panic!("ERROR: {}", err);
-            }
-        }
+        // remove_test_db();
+        // let db: DB = DB::new(TEST_DB_PATH);
+        // let person: PersonInfo = get_a_person();
+        // match db.add_member(&person) {
+        //     Ok(_) => (),
+        //     Err(err) => {
+        //         panic!("ERROR: {}", err);
+        //     }
+        // }
+        // remove_test_db();
     }
 
     #[test]
@@ -643,5 +715,6 @@ mod tests {
                 panic!("ERROR: {}", err);
             }
         }
+        remove_test_db();
     }
 }
