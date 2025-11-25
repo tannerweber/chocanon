@@ -18,6 +18,7 @@ use std::fs::{File, create_dir_all};
 
 use std::io::prelude::*;
 
+/// The various paths in the file system where emails shall be written.
 #[non_exhaustive]
 struct EmailPath;
 impl EmailPath {
@@ -36,45 +37,49 @@ fn ensure_email_dir() {
 
 pub fn send_provider_report(
     to: &str,
-    from: &str, //always from chocanon
+    from: &str,
     subject: &str,
     body: &str,
-) {
-    let _ = send_email(to, from, subject, body, EmailPath::PROVIDER);
+) -> std::io::Result<()> {
+    _ = send_email(to, from, subject, body, EmailPath::PROVIDER);
+    Ok(())
 }
 
 pub fn send_member_report(
     to: &str,
-    from: &str, //always from chocanon
+    from: &str,
     subject: &str,
     body: &str,
-) {
-    let _ = send_email(to, from, subject, body, EmailPath::MEMBER);
+) -> std::io::Result<()> {
+    _ = send_email(to, from, subject, body, EmailPath::MEMBER);
+    Ok(())
 }
 
 pub fn send_manager_report(
     to: &str,
-    from: &str, //always from chocanon
+    from: &str,
     subject: &str,
     body: &str,
-) {
-    let _ = send_email(to, from, subject, body, EmailPath::MANAGER);
+) -> std::io::Result<()> {
+    _ = send_email(to, from, subject, body, EmailPath::MANAGER);
+    Ok(())
 }
 
 pub fn send_provider_directory(
     to: &str,
-    from: &str, //always from chocanon
+    from: &str,
     subject: &str,
     body: &str,
-) {
-    let _ = send_email(to, from, subject, body, EmailPath::PROVIDER);
+) -> std::io::Result<()> {
+    send_email(to, from, subject, body, EmailPath::PROVIDER)?;
+    Ok(())
 }
 
 //path: &str, add this as an argument later
 // remember to make private
 pub fn send_email(
     to: &str,
-    from: &str, //always from chocanon
+    from: &str,
     subject: &str,
     body: &str,
     path: &str,
