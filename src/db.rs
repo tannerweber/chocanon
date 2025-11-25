@@ -42,8 +42,8 @@ pub enum Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            Error::Io(ref err) => write!(f, "IO error: {}", err),
-            Error::Sql(ref err) => write!(f, "SQL DB error: {}", err),
+            Error::Io(ref err) => write!(f, "STD IO error: {}", err),
+            Error::Sql(ref err) => write!(f, "Rusqlite error: {}", err),
         }
     }
 }
@@ -677,16 +677,15 @@ mod tests {
 
     #[test]
     fn test_add_member() {
-        // remove_test_db();
-        // let db: DB = DB::new(TEST_DB_PATH);
-        // let person: PersonInfo = get_a_person();
-        // match db.add_member(&person) {
-        //     Ok(_) => (),
-        //     Err(err) => {
-        //         panic!("ERROR: {}", err);
-        //     }
-        // }
-        // remove_test_db();
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH);
+        let person: PersonInfo = get_a_person();
+        match db.add_member(&person) {
+            Ok(_) => (),
+            Err(err) => {
+                panic!("add_member() ERROR: {}", err);
+            }
+        }
     }
 
     #[test]
@@ -712,9 +711,8 @@ mod tests {
         match db.add_consultation_record(&consul) {
             Ok(_) => (),
             Err(err) => {
-                panic!("ERROR: {}", err);
+                panic!("add_consultation_record() ERROR: {}", err);
             }
         }
-        remove_test_db();
     }
 }
