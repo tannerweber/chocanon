@@ -8,3 +8,4 @@ release:
 
 clean:
 	rm test_*
+	rm -r emails/

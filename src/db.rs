@@ -48,22 +48,6 @@ impl std::fmt::Display for Error {
     }
 }
 
-// impl std::error::Error for Error {
-//     fn description(&self) -> &str {
-//         match *self {
-//             Error::Io(ref err) => err.description(),
-//             Error::Sql(ref err) => std::error::Error::description(err),
-//         }
-//     }
-//
-//     fn cause(&self) -> Option<&dyn std::error::Error> {
-//         match *self {
-//             Error::Io(ref err) =>  Some(err),
-//             Error::Sql(ref err) =>  Some(err),
-//         }
-//     }
-// }
-
 /// A ChocAn database.
 #[derive(Debug)]
 pub struct DB {
@@ -79,7 +63,7 @@ impl DB {
     ///
     /// # Failure
     ///
-    /// Panics on failing to connect and create tables.
+    /// Will return `Err` if database could not be established.
     pub fn new(path: &str) -> Result<Self, Error> {
         let conn = Connection::open_with_flags(
             path,
@@ -148,7 +132,7 @@ impl DB {
                     member_id <= {}
                     AND member_id >= 0
                 ),
-                provider_id         INTEGER NOT NULL PRIMARY KEY CHECK (
+                provider_id         INTEGER NOT NULL CHECK (
                     provider_id <= {}
                     AND provider_id >= 0
                 ),
@@ -164,6 +148,17 @@ impl DB {
             MAX_PROVIDER_ID,
             MAX_SERVICE_CODE,
             MAX_COMMENT_SIZE,
+        );
+        conn.execute(&sql, []).map_err(Error::Sql)?;
+        sql = format!(
+            "CREATE TABLE IF NOT EXISTS provider_directory (
+                service_id  INTEGER NOT NULL PRIMARY KEY CHECK (
+                    service_id <= {}
+                    AND service_id >= 0
+                ),
+                name        TEXT NOT NULL
+            )",
+            MAX_SERVICE_CODE,
         );
         conn.execute(&sql, []).map_err(Error::Sql)?;
         Ok(DB { conn })
@@ -219,10 +214,51 @@ impl DB {
     ///
     /// Will return `Err` if any reports are not sent.
     pub fn send_manager_report(&self) -> Result<(), Error> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT
+                current_date_time,
+                service_date,
+                member_id,
+                provider_id,
+                service_code,
+                comments
+            FROM consultations",
+            )
+            .map_err(Error::Sql)?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(Consultation {
+                    curr_date: row.get(0)?,
+                    service_date: row.get(1)?,
+                    provider_id: row.get(2)?,
+                    member_id: row.get(3)?,
+                    service_code: row.get(4)?,
+                    comments: row.get(5)?,
+                })
+            })
+            .map_err(Error::Sql)?;
+        let mut report: String = "".to_string();
+        for consul in rows.flatten() {
+            report.push_str(&format!("{}", consul));
+        }
+        send_manager_report(
+            "manager@pdx.edu",
+            CHOCAN_EMAIL,
+            "Manager report",
+            &report,
+            "Manager",
+        )
+        .map_err(Error::Io)?;
         Ok(())
     }
 
     /// Sends out a the provider directory to the specified email.
+    ///
+    /// # Arguments
+    ///
+    /// * `email` - The email address to send the provider directory to.
     ///
     /// # Failure
     ///
@@ -240,6 +276,10 @@ impl DB {
     }
 
     /// Checks if the member id belongs to a member in the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The member id to check.
     ///
     /// # Success
     ///
@@ -264,6 +304,10 @@ impl DB {
 
     /// Checks if the provider id belongs to a provider in the database.
     ///
+    /// # Arguments
+    ///
+    /// * `id` - The provider id to check.
+    ///
     /// # Success
     ///
     /// Will return `Ok` wrapping `true` if valid person found.
@@ -287,6 +331,10 @@ impl DB {
 
     /// Checks if the service id belongs to a service in the directory.
     ///
+    /// # Arguments
+    ///
+    /// * `id` - The service id to check.
+    ///
     /// # Success
     ///
     /// Will return `Ok` wrapping `true` if valid service found.
@@ -307,6 +355,10 @@ impl DB {
     }
 
     /// Adds a member to the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `person` - The member to add to the database.
     ///
     /// # Failure
     ///
@@ -345,14 +397,50 @@ impl DB {
 
     /// Adds a provider to the database.
     ///
+    /// # Arguments
+    ///
+    /// * `person` - The provider to add to the database.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if the provider was not added.
-    pub fn add_provider(&self, _person: &PersonInfo) -> Result<(), Error> {
+    pub fn add_provider(&self, person: &PersonInfo) -> Result<(), Error> {
+        let state: String = person.location.state.iter().collect();
+
+        let mut stmt = self
+            .conn
+            .prepare(
+                "INSERT INTO providers (
+                id,
+                name,
+                address,
+                city,
+                state,
+                zipcode,
+                email,
+                is_valid
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            )
+            .map_err(Error::Sql)?;
+        stmt.execute(rusqlite::params![
+            &person.id,
+            &person.name,
+            &person.location.address,
+            &person.location.city,
+            &state,
+            &person.location.zipcode,
+            &person.email,
+            1,
+        ])
+        .map_err(Error::Sql)?;
         Ok(())
     }
 
     /// Removes a member from the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the member to remove.
     ///
     /// # Failure
     ///
@@ -368,6 +456,10 @@ impl DB {
 
     /// Removes a provider from the database.
     ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the provider to remove.
+    ///
     /// # Failure
     ///
     /// Will return `Err` if the provider was not removed.
@@ -381,6 +473,10 @@ impl DB {
     }
 
     /// Adds a consultation record to the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `consul` - The consultation to add to the database.
     ///
     /// # Failure
     ///
@@ -412,40 +508,6 @@ impl DB {
         ])
         .map_err(Error::Sql)?;
         Ok(())
-    }
-
-    fn retrieve_consultations(
-        &self,
-        id: u32,
-    ) -> rusqlite::Result<Vec<Consultation>, rusqlite::Error> {
-        let mut stmt = self.conn.prepare(
-            "SELECT
-                current_date_time,
-                service_date,
-                member_id,
-                provider_id,
-                service_code,
-                comments,
-            FROM consultations WHERE provider_id = ?",
-        )?;
-        let mut consul_iter = stmt.query_map(rusqlite::params![id], |row| {
-            Ok(Consultation {
-                curr_date: row.get(0)?,
-                service_date: row.get(1)?,
-                provider_id: row.get(2)?,
-                member_id: row.get(3)?,
-                service_code: row.get(4)?,
-                comments: row.get(5)?,
-            })
-        })?;
-        if consul_iter.next().is_none() {
-            return Err(rusqlite::Error::QueryReturnedNoRows);
-        }
-        let mut consuls = Vec::new();
-        for consul in consul_iter {
-            consuls.push(consul.unwrap());
-        }
-        Ok(consuls)
     }
 }
 
@@ -570,6 +632,26 @@ pub struct Consultation {
     comments: String,
 }
 
+impl std::fmt::Display for Consultation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Current date-time: {}\n
+            Service date: {}\n
+            Provider ID: {}\n
+            Member ID: {}\n
+            Servide Code: {}\n
+            Comments: {}\n",
+            self.curr_date,
+            self.service_date,
+            self.provider_id,
+            self.member_id,
+            self.service_code,
+            self.comments,
+        )
+    }
+}
+
 impl Consultation {
     /// Create a consultation.
     ///
@@ -681,6 +763,19 @@ mod tests {
         person
     }
 
+    fn create_a_unique_consultation(provider_id: u32) -> Consultation {
+        let consul = Consultation::new(
+            "01-13-2025 03:45:30",
+            "01-12-2025",
+            provider_id,
+            777777777,
+            123456,
+            "This is a comment for a consultation",
+        )
+        .unwrap();
+        consul
+    }
+
     fn get_a_consultation() -> Consultation {
         let consul: Consultation = Consultation::new(
             "01-13-2025 03:45:25",
@@ -706,11 +801,16 @@ mod tests {
     fn test_send_member_reports() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
-        db.add_member(&create_a_unique_person("Name1", 1)).unwrap();
-        db.add_member(&create_a_unique_person("Name2", 2)).unwrap();
-        db.add_member(&create_a_unique_person("Name3", 3)).unwrap();
-        db.add_member(&create_a_unique_person("Name4", 4)).unwrap();
-        db.add_member(&create_a_unique_person("Name5", 5)).unwrap();
+        db.add_member(&create_a_unique_person("Member Name1", 1))
+            .unwrap();
+        db.add_member(&create_a_unique_person("Member Name2", 2))
+            .unwrap();
+        db.add_member(&create_a_unique_person("Member Name3", 3))
+            .unwrap();
+        db.add_member(&create_a_unique_person("Member Name4", 4))
+            .unwrap();
+        db.add_member(&create_a_unique_person("Member Name5", 5))
+            .unwrap();
         match db.send_member_reports() {
             Ok(_) => (),
             Err(err) => panic!("send_member_reports() ERROR: {}", err),
@@ -721,7 +821,24 @@ mod tests {
     fn test_send_provider_reports() {}
 
     #[test]
-    fn test_send_manager_report() {}
+    fn test_send_manager_report() {
+        remove_test_db();
+        let db = DB::new(TEST_DB_PATH).unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(1))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(2))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(4))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(5))
+            .unwrap();
+        match db.send_manager_report() {
+            Ok(_) => (),
+            Err(err) => panic!("send_manager_report() ERROR: {}", err),
+        }
+    }
 
     #[test]
     fn test_send_provider_directory() {}
