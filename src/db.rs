@@ -166,6 +166,17 @@ impl DB {
             MAX_COMMENT_SIZE,
         );
         conn.execute(&sql, []).map_err(Error::Sql)?;
+        sql = format!(
+            "CREATE TABLE IF NOT EXISTS provider_directory (
+                service_id  INTEGER NOT NULL PRIMARY KEY CHECK (
+                    service_id <= {}
+                    AND service_id >= 0
+                ),
+                name        TEXT NOT NULL
+            )",
+            MAX_SERVICE_CODE,
+        );
+        conn.execute(&sql, []).map_err(Error::Sql)?;
         Ok(DB { conn })
     }
 
@@ -219,6 +230,43 @@ impl DB {
     ///
     /// Will return `Err` if any reports are not sent.
     pub fn send_manager_report(&self) -> Result<(), Error> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT
+                current_date_time,
+                service_date,
+                member_id,
+                provider_id,
+                service_code,
+                comments,
+            FROM consultations",
+            )
+            .map_err(Error::Sql)?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(Consultation {
+                    curr_date: row.get(0)?,
+                    service_date: row.get(1)?,
+                    provider_id: row.get(2)?,
+                    member_id: row.get(3)?,
+                    service_code: row.get(4)?,
+                    comments: row.get(5)?,
+                })
+            })
+            .map_err(Error::Sql)?;
+        let mut report: String = "".to_string();
+        for consul in rows.flatten() {
+            report.push_str(&format!("{}", consul));
+        }
+        send_manager_report(
+            "manager@pdx.edu",
+            CHOCAN_EMAIL,
+            "Manager report",
+            &report,
+            "Manager",
+        )
+        .map_err(Error::Io)?;
         Ok(())
     }
 
@@ -348,7 +396,35 @@ impl DB {
     /// # Failure
     ///
     /// Will return `Err` if the provider was not added.
-    pub fn add_provider(&self, _person: &PersonInfo) -> Result<(), Error> {
+    pub fn add_provider(&self, person: &PersonInfo) -> Result<(), Error> {
+        let state: String = person.location.state.iter().collect();
+
+        let mut stmt = self
+            .conn
+            .prepare(
+                "INSERT INTO providers (
+                id,
+                name,
+                address,
+                city,
+                state,
+                zipcode,
+                email,
+                is_valid
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            )
+            .map_err(Error::Sql)?;
+        stmt.execute(rusqlite::params![
+            &person.id,
+            &person.name,
+            &person.location.address,
+            &person.location.city,
+            &state,
+            &person.location.zipcode,
+            &person.email,
+            1,
+        ])
+        .map_err(Error::Sql)?;
         Ok(())
     }
 
@@ -568,6 +644,26 @@ pub struct Consultation {
     member_id: u32,
     service_code: u32,
     comments: String,
+}
+
+impl std::fmt::Display for Consultation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Current date-time: {}\n
+            Service date: {}\n
+            Provider ID: {}\n
+            Member ID: {}\n
+            Servide Code: {}\n
+            Comments: {}\n",
+            self.curr_date,
+            self.service_date,
+            self.provider_id,
+            self.member_id,
+            self.service_code,
+            self.comments,
+        )
+    }
 }
 
 impl Consultation {
