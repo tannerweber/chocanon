@@ -76,14 +76,12 @@ impl DB {
     /// # Failure
     ///
     /// Panics on failing to connect and create tables.
-    pub fn new(path: &str) -> Self {
-        let conn = match Connection::open_with_flags(
+    pub fn new(path: &str) -> Result<Self, Error> {
+        let conn = Connection::open_with_flags(
             path,
             OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
-        ) {
-            Ok(c) => c,
-            Err(err) => panic!("Failed to connect to database: {}", err),
-        };
+        )
+        .map_err(Error::Sql)?;
         let mut sql = format!(
             "CREATE TABLE IF NOT EXISTS members (
                 id          INTEGER NOT NULL PRIMARY KEY CHECK (
@@ -108,10 +106,7 @@ impl DB {
             STATE_SIZE,
             MAX_ZIPCODE,
         );
-        match conn.execute(&sql, []) {
-            Ok(_) => (),
-            Err(err) => panic!("ERROR: {}", err),
-        }
+        conn.execute(&sql, []).map_err(Error::Sql)?;
         sql = format!(
             "CREATE TABLE IF NOT EXISTS providers (
                 id          INTEGER NOT NULL PRIMARY KEY CHECK (
@@ -136,10 +131,7 @@ impl DB {
             STATE_SIZE,
             MAX_ZIPCODE,
         );
-        match conn.execute(&sql, []) {
-            Ok(_) => (),
-            Err(err) => panic!("ERROR: {}", err),
-        }
+        conn.execute(&sql, []).map_err(Error::Sql)?;
         sql = format!(
             "CREATE TABLE IF NOT EXISTS consultations (
                 current_date_time   TEXT NOT NULL CHECK (length(current_date_time) <= {}),
@@ -165,11 +157,8 @@ impl DB {
             MAX_SERVICE_CODE,
             MAX_COMMENT_SIZE,
         );
-        match conn.execute(&sql, []) {
-            Ok(_) => (),
-            Err(err) => panic!("ERROR: {}", err),
-        }
-        DB { conn }
+        conn.execute(&sql, []).map_err(Error::Sql)?;
+        Ok(DB { conn })
     }
 
     /// Sends out all member reports to all ChocAn members.
@@ -200,14 +189,10 @@ impl DB {
             })
             .map_err(Error::Sql)?;
         for row in rows {
-            match row {
-                Ok((name, email)) => {
-                    let subject: String =
-                        "Member Report for ".to_owned() + &name;
-                    send_member_report(&email, CHOCAN_EMAIL, &subject, "Body")
-                        .map_err(Error::Io)?;
-                }
-                Err(_) => (),
+            if let Ok((name, email)) = row {
+                let subject: String = "Member Report for ".to_owned() + &name;
+                send_member_report(&email, CHOCAN_EMAIL, &subject, "Body")
+                    .map_err(Error::Io)?;
             }
         }
         Ok(())
@@ -637,7 +622,7 @@ mod tests {
 
     fn get_populated_database() -> DB {
         remove_test_db();
-        let db = DB::new(TEST_DB_PATH);
+        let db = DB::new(TEST_DB_PATH).unwrap();
         let person = get_a_person();
         db.add_member(&person).unwrap();
         db
@@ -667,7 +652,7 @@ mod tests {
     #[test]
     fn test_add_member() {
         remove_test_db();
-        let db: DB = DB::new(TEST_DB_PATH);
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
         let person: PersonInfo = get_a_person();
         match db.add_member(&person) {
             Ok(_) => (),
@@ -695,7 +680,7 @@ mod tests {
     #[test]
     fn test_add_consultation_record() {
         remove_test_db();
-        let db: DB = DB::new(TEST_DB_PATH);
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
         let consul: Consultation = get_a_consultation();
         match db.add_consultation_record(&consul) {
             Ok(_) => (),
