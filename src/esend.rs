@@ -18,18 +18,57 @@ use std::fs::{File, create_dir_all};
 
 use std::io::prelude::*;
 
-const PATH: &str = "./emails/member";
+#[non_exhaustive]
+struct EmailPath;
+impl EmailPath {
+    pub const MEMBER: &str = "./emails/member";
+    pub const PROVIDER: &str = "./emails/provider";
+    pub const MANAGER: &str = "./emails/manager";
+}
 
 // creates a directory and doesn't error if
 // the directory already exists
 fn ensure_email_dir() {
-    let _ = create_dir_all(PATH);
+    let _ = create_dir_all(EmailPath::MEMBER);
+    let _ = create_dir_all(EmailPath::PROVIDER);
+    let _ = create_dir_all(EmailPath::MANAGER);
 }
 
-//send_provider_reports
-//send_provider_manager
-//send_member_report
-//send_provider_directory
+pub fn send_provider_report(
+    to: &str,
+    from: &str, //always from chocanon
+    subject: &str,
+    body: &str,
+) {
+    let _ = send_email(to, from, subject, body, EmailPath::PROVIDER);
+}
+
+pub fn send_member_report(
+    to: &str,
+    from: &str, //always from chocanon
+    subject: &str,
+    body: &str,
+) {
+    let _ = send_email(to, from, subject, body, EmailPath::MEMBER);
+}
+
+pub fn send_manager_report(
+    to: &str,
+    from: &str, //always from chocanon
+    subject: &str,
+    body: &str,
+) {
+    let _ = send_email(to, from, subject, body, EmailPath::MANAGER);
+}
+
+pub fn send_provider_directory(
+    to: &str,
+    from: &str, //always from chocanon
+    subject: &str,
+    body: &str,
+) {
+    let _ = send_email(to, from, subject, body, EmailPath::PROVIDER);
+}
 
 //path: &str, add this as an argument later
 // remember to make private
@@ -38,12 +77,12 @@ pub fn send_email(
     from: &str, //always from chocanon
     subject: &str,
     body: &str,
+    path: &str,
 ) -> std::io::Result<()> {
     ensure_email_dir();
 
     let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
-    let file_name = format!("{}/{}_{}.txt", PATH, to, timestamp);
-
+    let file_name = format!("{}/{}_{}.txt", path, to, timestamp);
     let mut file = File::create(&file_name)?;
 
     writeln!(file, "To: {}", to)?;
@@ -54,64 +93,37 @@ pub fn send_email(
         "Date: {}\n",
         chrono::Local::now().format("%Y-%m-%d %H-%M-%S")
     )?;
-
     writeln!(file, "{}\n", body)?;
-
     Ok(())
 }
-
-/*
-/// Writes an email as a file.
-pub fn send_email(
-    to: &str,
-    from: &str,
-    subject: &str,
-    body: &str,
-) -> std::io::Result<()> {
-    //specify path
-    match create_dir(PATH) {
-        Ok(_) => (),
-        Err(_) => (),
-    }
-
-    let date = chrono::Local::now().date_naive().to_string();
-    let file_name = format!("{}_{}.txt", to, date);
-    let mut file = File::create(&file_name)?;
-
-    file.write_all(to.as_bytes())?;
-    file.write_all(from.as_bytes())?;
-    file.write_all(subject.as_bytes())?;
-    file.write_all(body.as_bytes())?;
-    Ok(())
-}
-*/
-
-/*	esend::send_email(
-        "User 108",
-        "Chocanon Services",
-        "Regarding Follow up meeting",
-        "Lorem Ipsum however it goes"
-    ).expect("This email failed to send");
-
-    println!("Email testing concluded");
-*/
 
 #[cfg(test)]
 mod tests {
-    //super allows to use the entire file acting as if
-    //it is in the scope of the functions that we want to call
-    //at least that's how I interpret it.
     use super::*;
+
     #[test]
     fn test_send_email() {
-        send_email(
+        match send_email(
             "User 108",
             "Chocanon Services",
             "Regarding Follow up meeting",
-            "Lorem Ipsum however it goes",
-        )
-        .expect("This email failed to send");
-
-        println!("Email testing concluded");
+            "This is te body of the email.",
+            EmailPath::MEMBER,
+        ) {
+            Ok(_) => (),
+            Err(err) => panic!("ERROR {}", err),
+        }
     }
+
+    #[test]
+    fn test_send_member_report() {}
+
+    #[test]
+    fn test_send_provider_report() {}
+
+    #[test]
+    fn test_send_manager_report() {}
+
+    #[test]
+    fn test_send_provider_directory() {}
 }
