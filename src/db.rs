@@ -132,7 +132,7 @@ impl DB {
                     member_id <= {}
                     AND member_id >= 0
                 ),
-                provider_id         INTEGER NOT NULL PRIMARY KEY CHECK (
+                provider_id         INTEGER NOT NULL CHECK (
                     provider_id <= {}
                     AND provider_id >= 0
                 ),
