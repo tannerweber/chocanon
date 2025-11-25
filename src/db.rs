@@ -141,23 +141,23 @@ impl DB {
     /// # Failure
     ///
     /// Will return `Err` if any reports are not sent.
-    pub fn send_member_reports() -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn send_member_reports(&self) -> rusqlite::Result<(), rusqlite::Error> {
         // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
         // ONLY SEND REPORTS FOR NOT SUSPENDED
         Ok(())
     }
 
-    pub fn send_provider_reports() -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn send_provider_reports(&self) -> rusqlite::Result<(), rusqlite::Error> {
         // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
         // ONLY SEND REPORTS FOR NOT SUSPENDED
         Ok(())
     }
 
-    pub fn send_manager_report() -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn send_manager_report(&self) -> rusqlite::Result<(), rusqlite::Error> {
         Ok(())
     }
 
-    pub fn send_provider_directory() -> rusqlite::Result<(), rusqlite::Error> {
+    pub fn send_provider_directory(&self) -> rusqlite::Result<(), rusqlite::Error> {
         Ok(())
     }
 
