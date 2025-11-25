@@ -134,8 +134,12 @@ impl DB {
         conn.execute(&sql, []).map_err(Error::Sql)?;
         sql = format!(
             "CREATE TABLE IF NOT EXISTS consultations (
-                current_date_time   TEXT NOT NULL CHECK (length(current_date_time) <= {}),
-                service_date        TEXT NOT NULL CHECK (length(service_date) == {}),
+                current_date_time   TEXT NOT NULL CHECK (
+                    length(current_date_time) <= {}
+                ),
+                service_date        TEXT NOT NULL CHECK (
+                    length(service_date) == {}
+                ),
                 member_id           INTEGER NOT NULL CHECK (
                     member_id <= {}
                     AND member_id >= 0
@@ -188,12 +192,10 @@ impl DB {
                 Ok((name, email))
             })
             .map_err(Error::Sql)?;
-        for row in rows {
-            if let Ok((name, email)) = row {
-                let subject: String = "Member Report for ".to_owned() + &name;
-                send_member_report(&email, CHOCAN_EMAIL, &subject, "Body")
-                    .map_err(Error::Io)?;
-            }
+        for (name, email) in rows.flatten() {
+            let subject: String = "Member Report for ".to_owned() + &name;
+            send_member_report(&email, CHOCAN_EMAIL, &subject, "Body")
+                .map_err(Error::Io)?;
         }
         Ok(())
     }
@@ -237,10 +239,22 @@ impl DB {
         Ok(())
     }
 
+    /// Checks if the member id belongs to a member in the database.
+    ///
+    /// # Success
+    ///
+    /// Will return `Ok` wrapping `true` if valid person found.
+    /// Otherwise, will return `Ok` wrapping `false`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` on database error.
     pub fn is_valid_member_id(&self, id: u32) -> Result<bool, Error> {
         let mut stmt = self
             .conn
-            .prepare("SELECT COUNT(*) FROM members WHERE id = ?")
+            .prepare(
+                "SELECT COUNT(*) FROM members WHERE id = ? AND is_valid = 1",
+            )
             .map_err(Error::Sql)?;
         let count: u32 = stmt
             .query_row(rusqlite::params![id], |row| row.get(0))
@@ -248,10 +262,22 @@ impl DB {
         Ok(count > 0)
     }
 
+    /// Checks if the provider id belongs to a provider in the database.
+    ///
+    /// # Success
+    ///
+    /// Will return `Ok` wrapping `true` if valid person found.
+    /// Otherwise, will return `Ok` wrapping `false`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` on database error.
     pub fn is_valid_provider_id(&self, id: u32) -> Result<bool, Error> {
         let mut stmt = self
             .conn
-            .prepare("SELECT COUNT(*) FROM providers WHERE id = ?")
+            .prepare(
+                "SELECT COUNT(*) FROM providers WHERE id = ? AND is_valid = 1",
+            )
             .map_err(Error::Sql)?;
         let count: u32 = stmt
             .query_row(rusqlite::params![id], |row| row.get(0))
@@ -259,6 +285,16 @@ impl DB {
         Ok(count > 0)
     }
 
+    /// Checks if the service id belongs to a service in the directory.
+    ///
+    /// # Success
+    ///
+    /// Will return `Ok` wrapping `true` if valid service found.
+    /// Otherwise, will return `Ok` wrapping `false`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` on database error.
     pub fn is_valid_service_id(&self, id: u32) -> Result<bool, Error> {
         let mut stmt = self
             .conn
