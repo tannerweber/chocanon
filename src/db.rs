@@ -48,22 +48,6 @@ impl std::fmt::Display for Error {
     }
 }
 
-// impl std::error::Error for Error {
-//     fn description(&self) -> &str {
-//         match *self {
-//             Error::Io(ref err) => err.description(),
-//             Error::Sql(ref err) => std::error::Error::description(err),
-//         }
-//     }
-//
-//     fn cause(&self) -> Option<&dyn std::error::Error> {
-//         match *self {
-//             Error::Io(ref err) =>  Some(err),
-//             Error::Sql(ref err) =>  Some(err),
-//         }
-//     }
-// }
-
 /// A ChocAn database.
 #[derive(Debug)]
 pub struct DB {
@@ -488,40 +472,6 @@ impl DB {
         ])
         .map_err(Error::Sql)?;
         Ok(())
-    }
-
-    fn retrieve_consultations(
-        &self,
-        id: u32,
-    ) -> rusqlite::Result<Vec<Consultation>, rusqlite::Error> {
-        let mut stmt = self.conn.prepare(
-            "SELECT
-                current_date_time,
-                service_date,
-                member_id,
-                provider_id,
-                service_code,
-                comments,
-            FROM consultations WHERE provider_id = ?",
-        )?;
-        let mut consul_iter = stmt.query_map(rusqlite::params![id], |row| {
-            Ok(Consultation {
-                curr_date: row.get(0)?,
-                service_date: row.get(1)?,
-                provider_id: row.get(2)?,
-                member_id: row.get(3)?,
-                service_code: row.get(4)?,
-                comments: row.get(5)?,
-            })
-        })?;
-        if consul_iter.next().is_none() {
-            return Err(rusqlite::Error::QueryReturnedNoRows);
-        }
-        let mut consuls = Vec::new();
-        for consul in consul_iter {
-            consuls.push(consul.unwrap());
-        }
-        Ok(consuls)
     }
 }
 
