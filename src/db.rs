@@ -15,8 +15,8 @@
 
 //! Module for the Chocaholics Anonymous database.
 
-use rusqlite::{Connection, OpenFlags};
 use crate::esend::*;
+use rusqlite::{Connection, OpenFlags};
 
 const MAX_NAME_SIZE: u32 = 25;
 const MAX_MEMBER_ID: u32 = 999999999; // 9 Digits
@@ -178,19 +178,25 @@ impl DB {
     pub fn send_member_reports(&self) -> Result<(), Error> {
         // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
         // ONLY SEND REPORTS FOR NOT SUSPENDED
-        let mut stmt = self.conn.prepare(
-            "SELECT
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT
                 name,
             FROM members WHERE is_valid = 1",
-        ).map_err(Error::Sql)?;
-        let rows = stmt.query_map([], |row| {
-            let name: String = row.get(0)?;
-            Ok(name)
-        }).map_err(Error::Sql)?;
+            )
+            .map_err(Error::Sql)?;
+        let rows = stmt
+            .query_map([], |row| {
+                let name: String = row.get(0)?;
+                Ok(name)
+            })
+            .map_err(Error::Sql)?;
         for row in rows {
             match row {
                 Ok(name) => {
-                    let subject: String = "Member Report for ".to_owned() + &name;
+                    let subject: String =
+                        "Member Report for ".to_owned() + &name;
                     match send_member_report(
                         "temp@mail.com",
                         CHOCAN_EMAIL,
@@ -209,9 +215,7 @@ impl DB {
         Ok(())
     }
 
-    pub fn send_provider_reports(
-        &self,
-    ) -> Result<(), Error> {
+    pub fn send_provider_reports(&self) -> Result<(), Error> {
         // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
         // ONLY SEND REPORTS FOR NOT SUSPENDED
         Ok(())
@@ -221,40 +225,33 @@ impl DB {
         Ok(())
     }
 
-    pub fn send_provider_directory(
-        &self,
-    ) -> Result<(), Error> {
+    pub fn send_provider_directory(&self) -> Result<(), Error> {
         Ok(())
     }
 
-    pub fn is_valid_member_id(
-        &self,
-        id: u32,
-    ) -> Result<bool, Error> {
+    pub fn is_valid_member_id(&self, id: u32) -> Result<bool, Error> {
         let mut stmt = self
             .conn
-            .prepare("SELECT COUNT(*) FROM members WHERE id = ?").map_err(Error::Sql)?;
-        let count: u32 =
-            stmt.query_row(rusqlite::params![id], |row| row.get(0)).map_err(Error::Sql)?;
+            .prepare("SELECT COUNT(*) FROM members WHERE id = ?")
+            .map_err(Error::Sql)?;
+        let count: u32 = stmt
+            .query_row(rusqlite::params![id], |row| row.get(0))
+            .map_err(Error::Sql)?;
         Ok(count > 0)
     }
 
-    pub fn is_valid_provider_id(
-        &self,
-        id: u32,
-    ) -> Result<bool, Error> {
+    pub fn is_valid_provider_id(&self, id: u32) -> Result<bool, Error> {
         let mut stmt = self
             .conn
-            .prepare("SELECT COUNT(*) FROM providers WHERE id = ?").map_err(Error::Sql)?;
-        let count: u32 =
-            stmt.query_row(rusqlite::params![id], |row| row.get(0)).map_err(Error::Sql)?;
+            .prepare("SELECT COUNT(*) FROM providers WHERE id = ?")
+            .map_err(Error::Sql)?;
+        let count: u32 = stmt
+            .query_row(rusqlite::params![id], |row| row.get(0))
+            .map_err(Error::Sql)?;
         Ok(count > 0)
     }
 
-    pub fn is_valid_service_id(
-        &self,
-        _id: u32,
-    ) -> Result<bool, Error> {
+    pub fn is_valid_service_id(&self, _id: u32) -> Result<bool, Error> {
         Ok(false)
     }
 
@@ -263,14 +260,13 @@ impl DB {
     /// # Failure
     ///
     /// Will return `Err` if the member was not added.
-    pub fn add_member(
-        &self,
-        person: &PersonInfo,
-    ) -> Result<(), Error> {
+    pub fn add_member(&self, person: &PersonInfo) -> Result<(), Error> {
         let state: String = person.location.state.iter().collect();
 
-        let mut stmt = self.conn.prepare(
-            "INSERT INTO members (
+        let mut stmt = self
+            .conn
+            .prepare(
+                "INSERT INTO members (
                 id,
                 name,
                 address,
@@ -279,7 +275,8 @@ impl DB {
                 zipcode,
                 is_valid
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        ).map_err(Error::Sql)?;
+            )
+            .map_err(Error::Sql)?;
         stmt.execute(rusqlite::params![
             &person.id,
             &person.name,
@@ -288,32 +285,29 @@ impl DB {
             &state,
             &person.location.zipcode,
             true,
-        ]).map_err(Error::Sql)?;
+        ])
+        .map_err(Error::Sql)?;
         Ok(())
     }
 
-    pub fn add_provider(
-        &self,
-        _person: &PersonInfo,
-    ) -> Result<(), Error> {
+    pub fn add_provider(&self, _person: &PersonInfo) -> Result<(), Error> {
         Ok(())
     }
 
-    pub fn remove_member(
-        &self,
-        id: u32,
-    ) -> Result<(), Error> {
-        let mut stmt = self.conn.prepare("DELETE FROM members WHERE id = ?").map_err(Error::Sql)?;
+    pub fn remove_member(&self, id: u32) -> Result<(), Error> {
+        let mut stmt = self
+            .conn
+            .prepare("DELETE FROM members WHERE id = ?")
+            .map_err(Error::Sql)?;
         stmt.execute(rusqlite::params![id]).map_err(Error::Sql)?;
         Ok(())
     }
 
-    pub fn remove_provider(
-        &self,
-        id: u32,
-    ) -> Result<(), Error> {
-        let mut stmt =
-            self.conn.prepare("DELETE FROM providers WHERE id = ?").map_err(Error::Sql)?;
+    pub fn remove_provider(&self, id: u32) -> Result<(), Error> {
+        let mut stmt = self
+            .conn
+            .prepare("DELETE FROM providers WHERE id = ?")
+            .map_err(Error::Sql)?;
         stmt.execute(rusqlite::params![id]).map_err(Error::Sql)?;
         Ok(())
     }
@@ -322,8 +316,10 @@ impl DB {
         &self,
         consul: &Consultation,
     ) -> Result<(), Error> {
-        let mut stmt = self.conn.prepare(
-            "INSERT INTO consultations (
+        let mut stmt = self
+            .conn
+            .prepare(
+                "INSERT INTO consultations (
                 current_date_time,
                 service_date,
                 provider_id,
@@ -331,7 +327,8 @@ impl DB {
                 service_code,
                 comments
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        ).map_err(Error::Sql)?;
+            )
+            .map_err(Error::Sql)?;
         stmt.execute(rusqlite::params![
             &consul.curr_date,
             &consul.service_date,
@@ -339,7 +336,8 @@ impl DB {
             &consul.member_id,
             &consul.service_code,
             &consul.comments,
-        ]).map_err(Error::Sql)?;
+        ])
+        .map_err(Error::Sql)?;
         Ok(())
     }
 
