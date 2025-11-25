@@ -182,12 +182,7 @@ impl DB {
         // ONLY SEND REPORTS FOR NOT SUSPENDED
         let mut stmt = self
             .conn
-            .prepare(
-                "SELECT
-                name,
-                email,
-            FROM members WHERE is_valid = 1",
-            )
+            .prepare("SELECT name, email FROM members WHERE is_valid = 1")
             .map_err(Error::Sql)?;
         let rows = stmt
             .query_map([], |row| {
@@ -663,16 +658,25 @@ mod tests {
     }
 
     fn get_a_person() -> PersonInfo {
-        let location: LocationInfo =
+        let location =
             LocationInfo::new("1234 Main st", "Portland", &['O', 'R'], 56789)
                 .unwrap();
-        let person: PersonInfo = PersonInfo::new(
+        let person = PersonInfo::new(
             "Timmy Smith",
             123456789,
             &location,
             "timmmy@pdx.edu",
         )
         .unwrap();
+        person
+    }
+
+    fn create_a_unique_person(name: &str, id: u32) -> PersonInfo {
+        let location =
+            LocationInfo::new("1234 Main st", "Portland", &['O', 'R'], 56789)
+                .unwrap();
+        let email = format!("{}@pdx.edu", name);
+        let person = PersonInfo::new(name, id, &location, &email).unwrap();
         person
     }
 
@@ -698,7 +702,19 @@ mod tests {
     }
 
     #[test]
-    fn test_send_member_reports() {}
+    fn test_send_member_reports() {
+        remove_test_db();
+        let db = DB::new(TEST_DB_PATH).unwrap();
+        db.add_member(&create_a_unique_person("Name1", 1)).unwrap();
+        db.add_member(&create_a_unique_person("Name2", 2)).unwrap();
+        db.add_member(&create_a_unique_person("Name3", 3)).unwrap();
+        db.add_member(&create_a_unique_person("Name4", 4)).unwrap();
+        db.add_member(&create_a_unique_person("Name5", 5)).unwrap();
+        match db.send_member_reports() {
+            Ok(_) => (),
+            Err(err) => panic!("send_member_reports() ERROR: {}", err),
+        }
+    }
 
     #[test]
     fn test_send_provider_reports() {}
