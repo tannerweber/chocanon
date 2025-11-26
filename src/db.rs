@@ -891,6 +891,7 @@ mod tests {
     fn test_send_member_reports() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
+
         db.add_member(&create_a_unique_person("MemberName1", 1))
             .unwrap();
         db.add_member(&create_a_unique_person("MemberName2", 2))
@@ -914,6 +915,7 @@ mod tests {
     fn test_send_manager_report() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
+
         db.add_consultation_record(&create_a_unique_consultation(1))
             .unwrap();
         db.add_consultation_record(&create_a_unique_consultation(2))
@@ -944,6 +946,7 @@ mod tests {
     fn test_is_valid_member_id() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
         db.add_member(&create_a_unique_person("MemberName", 1))
             .unwrap();
         db.add_member(&create_a_unique_person("MemberName", 2))
@@ -988,6 +991,7 @@ mod tests {
     fn test_is_valid_provider_id() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
         db.add_provider(&create_a_unique_person("ProviderName", 1))
             .unwrap();
         db.add_provider(&create_a_unique_person("ProviderName", 2))
@@ -1032,6 +1036,7 @@ mod tests {
     fn test_is_valid_service_id() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
         db.add_service(1, "Therapy1").unwrap();
         db.add_service(2, "Therapy2").unwrap();
         db.add_service(123456, "Therapy3").unwrap();
@@ -1074,6 +1079,7 @@ mod tests {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
         let person: PersonInfo = get_a_person();
+
         match db.add_member(&person) {
             Ok(_) => (),
             Err(err) => {
@@ -1091,6 +1097,7 @@ mod tests {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
         let person: PersonInfo = get_a_person();
+
         match db.add_provider(&person) {
             Ok(_) => (),
             Err(err) => {
@@ -1107,6 +1114,7 @@ mod tests {
     fn test_remove_member() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
         match db.remove_member(123456789) {
             Ok(_) => {
                 panic!("Member should not exist and not be able to be removed.")
@@ -1125,6 +1133,7 @@ mod tests {
     fn test_remove_provider() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
         match db.remove_provider(123456789) {
             Ok(_) => {
                 panic!(
@@ -1146,6 +1155,7 @@ mod tests {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
         let consul: Consultation = get_a_consultation();
+
         match db.add_consultation_record(&consul) {
             Ok(_) => (),
             Err(err) => {
