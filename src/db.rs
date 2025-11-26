@@ -181,16 +181,21 @@ impl DB {
             .conn
             .prepare(
                 "SELECT
-                members.name,
                 members.email,
-                consultations.current_date_time,
+                members.name,
+                members.id,
+                members.address,
+                members.city,
+                members.state,
+                members.zipcode,
                 consultations.service_date,
-                consultations.service_code,
-                consultations.comments
+                consultations.provider_id,
+                consultations.service_code
                 FROM members
                 INNER JOIN consultations
                 ON members.id = consultations.member_id
-                WHERE members.is_valid = 1",
+                WHERE members.is_valid = 1
+                ORDER BY consultations.service_date ASC",
             )
             .map_err(Error::Sql)?;
         let rows = stmt
@@ -204,7 +209,7 @@ impl DB {
                 let member_zipcode: u32 = row.get(6)?;
                 let service_date: String = row.get(7)?;
                 let provider_id: u32 = row.get(8)?;
-                let service_id: String = row.get(9)?;
+                let service_id: u32 = row.get(9)?;
                 Ok((
                     member_email,
                     member_name,
@@ -960,7 +965,17 @@ mod tests {
             .unwrap();
         db.add_member(&create_a_unique_person("MemberName4", 4))
             .unwrap();
-        db.add_member(&create_a_unique_person("MemberName5", 5))
+        db.add_consultation_record(&create_a_unique_consultation(1, 66))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(2, 66))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(2, 66))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3, 66))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3, 66))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3, 66))
             .unwrap();
         match db.send_member_reports() {
             Ok(_) => (),
@@ -1253,33 +1268,6 @@ mod tests {
         let name = db.get_service_name(123456).unwrap();
         if name != "Service1" {
             panic!("Name should match for retrieved name.");
-        }
-    }
-
-    #[test]
-    fn final_test() {
-        remove_test_db();
-        let db = DB::new("./final_test.db3").unwrap();
-
-        db.add_member(&create_a_unique_person("MemberName1", 1))
-            .unwrap();
-        db.add_member(&create_a_unique_person("MemberName2", 2))
-            .unwrap();
-        db.add_member(&create_a_unique_person("MemberName3", 3))
-            .unwrap();
-        db.add_member(&create_a_unique_person("MemberName4", 4))
-            .unwrap();
-        db.add_member(&create_a_unique_person("MemberName5", 5))
-            .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(1, 1))
-            .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(1, 2))
-            .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(1, 3))
-            .unwrap();
-        match db.send_member_reports() {
-            Ok(_) => (),
-            Err(err) => panic!("send_member_reports() ERROR: {}", err),
         }
     }
 }
