@@ -27,9 +27,11 @@ pub fn run_man_term(db: &DB) {
         match choice.as_str() {
             "1" => add_person_ui(db),
             "2" => remove_person(db),
-            "3" => println!("todo"),
-            "4" => println!("todo"),
-            "5" => quit = true,
+            "3" => match db.send_manager_report() {
+                Ok(()) => println!("Manager report sent."),
+                Err(e) => eprintln!("Error sending report: {e}"),
+            },
+            "4" => quit = true,
             _ => println!("Invalid input."),
         }
     }
@@ -41,8 +43,8 @@ fn display_options() -> String {
     println!("----MANAGER TERMINAL----");
     println!("1. Add new member");
     println!("2. Remove member");
-    println!("4. Request report");
-    println!("5. Quit");
+    println!("3. Request report");
+    println!("4. Quit");
     read_choice()
 }
 
