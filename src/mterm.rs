@@ -17,32 +17,32 @@
 use crate::db::{DB, LocationInfo, PersonInfo};
 use std::io::{self, Write};
 
+//driver function that initializes the manager terminal
+//param DB - database to be passed to the manager terminal
 pub fn run_man_term(db: &DB) {
     let mut quit = false;
     while !quit {
         let choice = display_options();
 
         match choice.as_str() {
-            "1" => add_member_ui(db),
-            "2" => println!("todo"),
+            "1" => add_person_ui(db),
+            "2" => remove_person(db),
             "3" => println!("todo"),
             "4" => println!("todo"),
-            "5" => println!("todo"),
-            "6" => quit = true,
+            "5" => quit = true,
             _ => println!("Invalid input."),
         }
     }
 }
 
 //displays options for the manager terminal
+//returns string
 fn display_options() -> String {
     println!("----MANAGER TERMINAL----");
     println!("1. Add new member");
-    println!("2. Add new provider");
-    println!("3. Remove member");
-    println!("4. remove provider");
-    println!("5. Request report");
-    println!("6. Quit");
+    println!("2. Remove member");
+    println!("4. Request report");
+    println!("5. Quit");
     read_choice()
 }
 
@@ -57,8 +57,10 @@ fn read_choice() -> String {
     io::stdin().read_line(&mut buf).expect("Invalid input");
     buf.trim().to_string()
 }
+
 //adds member to the database
-fn add_member_ui(db: &DB) {
+//param DB - database to add the member too
+fn add_person_ui(db: &DB) {
     println!("----Add New Member----");
     let name = read_line("Name:");
     let id_str = read_line("9 digit member ID:");
@@ -107,12 +109,54 @@ fn add_member_ui(db: &DB) {
             return;
         }
     };
-    match db.add_member(&person) {
-        Ok(()) => println!("Member successfully added."),
-        Err(e) => eprintln!("Error adding member: {e}"),
+
+    //determine if user is adding member or provider
+    let person_type = read_line("Is this person a provider? (y/n): ");
+    if person_type.to_lowercase().starts_with('y') {
+        match db.add_provider(&person) {
+            Ok(_) => println!("Provider was successfully added."),
+            Err(e) => eprintln!("Error adding provider: {e}"),
+        }
+    } else {
+        match db.add_member(&person) {
+            Ok(_) => println!("Member was successfully added."),
+            Err(e) => eprintln!("Error adding member: {e}"),
+        }
+    }
+}
+//removes member based off of the member id
+fn remove_person(db: &DB) {
+    let person_type = read_line("Is this person a provider? (y/n)");
+    if person_type.to_lowercase().starts_with('y') {
+        let id_str: String = read_line("Enter the provider ID to be removed: ");
+        let id: u32 = match id_str.trim().parse() {
+            Ok(n) => n,
+            Err(_) => {
+                eprintln!("ID is invalid, please enter valid 9 digit number.");
+                return;
+            }
+        };
+        match db.remove_provider(id) {
+            Ok(()) => println!("Provider removed successfully."),
+            Err(e) => eprintln!("Error removing provider: {e}"),
+        }
+    } else {
+        let id_str: String = read_line("Enter the member ID to remove: ");
+        let id: u32 = match id_str.trim().parse() {
+            Ok(n) => n,
+            Err(_) => {
+                eprintln!("ID is invalid, please enter valid 9 digit number.");
+                return;
+            }
+        };
+        match db.remove_member(id) {
+            Ok(()) => println!("Member removed successfully."),
+            Err(e) => eprintln!("Error removing Member: {e}"),
+        }
     }
 }
 
+//helper function to read line from user input
 fn read_line(prompt: &str) -> String {
     print!("{prompt}");
     io::stdout().flush().unwrap();
