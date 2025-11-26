@@ -37,6 +37,7 @@ const CHOCAN_EMAIL: &str = "chocan@pdx.edu";
 pub enum Error {
     Io(std::io::Error),
     Sql(rusqlite::Error),
+    EmptyInput,
 }
 
 impl std::fmt::Display for Error {
@@ -44,6 +45,7 @@ impl std::fmt::Display for Error {
         match *self {
             Error::Io(ref err) => write!(f, "STD IO error: {}", err),
             Error::Sql(ref err) => write!(f, "Rusqlite error: {}", err),
+            Error::EmptyInput => write!(f, "Empty input error"),
         }
     }
 }
@@ -177,7 +179,19 @@ impl DB {
         // ONLY SEND REPORTS FOR NOT SUSPENDED
         let mut stmt = self
             .conn
-            .prepare("SELECT name, email FROM members WHERE is_valid = 1")
+            .prepare(
+                "SELECT
+                members.name,
+                members.email,
+                consultations.current_date_time,
+                consultations.service_date,
+                consultations.service_code,
+                consultations.comments
+                FROM members
+                INNER JOIN consultations
+                ON members.id = consultations.member_id
+                WHERE members.is_valid = 1",
+            )
             .map_err(Error::Sql)?;
         let rows = stmt
             .query_map([], |row| {
@@ -549,6 +563,9 @@ impl DB {
     ///
     /// Will return `Err` if the service was not added.
     pub fn add_service(&self, id: u32, name: &str) -> Result<(), Error> {
+        if name.chars().count() == 0 {
+            return Err(Error::EmptyInput);
+        }
         let mut stmt = self
             .conn
             .prepare(
@@ -561,6 +578,32 @@ impl DB {
         stmt.execute(rusqlite::params![id, name,])
             .map_err(Error::Sql)?;
         Ok(())
+    }
+
+    /// Gets the name corresponding to the specified service code id.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the service to get the name of.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the name could not be retrieved.
+    pub fn get_service_name(&self, id: u32) -> Result<String, Error> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT name FROM provider_directory WHERE service_id = ?")
+            .map_err(Error::Sql)?;
+        let rows = stmt
+            .query_map([id], |row| {
+                let name: String = row.get(0)?;
+                Ok(name)
+            })
+            .map_err(Error::Sql)?;
+        if let Some(name) = rows.flatten().next() {
+            return Ok(name);
+        }
+        Err(Error::Sql(rusqlite::Error::QueryReturnedNoRows))
     }
 }
 
@@ -1108,6 +1151,38 @@ mod tests {
             Err(err) => {
                 panic!("add_consultation_record() ERROR: {}", err);
             }
+        }
+    }
+
+    #[test]
+    fn test_add_service() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
+        db.add_service(123456, "Service1").unwrap();
+        match db.add_service(123456, "Serv") {
+            Ok(_) => panic!("Error expected for duplicate ID."),
+            Err(_) => (),
+        }
+        match db.add_service(222222, "") {
+            Ok(_) => panic!("Error expected for empty name."),
+            Err(_) => (),
+        }
+    }
+
+    #[test]
+    fn test_get_service_name() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
+        match db.get_service_name(123456) {
+            Ok(_) => panic!("Error expected on empty database"),
+            Err(_) => (),
+        }
+        db.add_service(123456, "Service1").unwrap();
+        let name = db.get_service_name(123456).unwrap();
+        if name != "Service1" {
+            panic!("Name should match for retrieved name.");
         }
     }
 }
