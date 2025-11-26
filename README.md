@@ -7,6 +7,11 @@ Chocaholics Anonymous simulator
 The binary can be built with ```make release```.
 We've mainly tested on GNU/Linux x86_64.
 
+# Running
+
+The emails are outputted in the emails directory.
+```make clean``` can be run to remove the directory.
+
 # Testing
 
 The default make target runs testing, linting, and formatting.
