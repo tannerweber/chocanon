@@ -1027,17 +1027,21 @@ mod tests {
             .unwrap();
         db.add_member(&create_a_unique_person("MemberName4", 4))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(1, 66))
+        db.add_provider(&create_a_unique_person("ProviderName1", 61))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(2, 66))
+        db.add_provider(&create_a_unique_person("ProviderName2", 62))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(2, 66))
+        db.add_consultation_record(&create_a_unique_consultation(1, 61))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(3, 66))
+        db.add_consultation_record(&create_a_unique_consultation(2, 61))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(3, 66))
+        db.add_consultation_record(&create_a_unique_consultation(2, 61))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(3, 66))
+        db.add_consultation_record(&create_a_unique_consultation(3, 61))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3, 61))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3, 61))
             .unwrap();
         match db.send_member_reports() {
             Ok(_) => (),
