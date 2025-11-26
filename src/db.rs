@@ -195,15 +195,73 @@ impl DB {
             .map_err(Error::Sql)?;
         let rows = stmt
             .query_map([], |row| {
-                let name: String = row.get(0)?;
-                let email: String = row.get(1)?;
-                Ok((name, email))
+                let member_email: String = row.get(0)?;
+                let member_name: String = row.get(1)?;
+                let member_id: u32 = row.get(2)?;
+                let member_address: String = row.get(3)?;
+                let member_city: String = row.get(4)?;
+                let member_state: String = row.get(5)?;
+                let member_zipcode: u32 = row.get(6)?;
+                let service_date: String = row.get(7)?;
+                let provider_id: u32 = row.get(8)?;
+                let service_id: String = row.get(9)?;
+                Ok((
+                    member_email,
+                    member_name,
+                    member_id,
+                    member_address,
+                    member_city,
+                    member_state,
+                    member_zipcode,
+                    service_date,
+                    provider_id,
+                    service_id,
+                ))
             })
             .map_err(Error::Sql)?;
-        for (name, email) in rows.flatten() {
-            let subject: String = "Member Report for ".to_owned() + &name;
-            send_member_report(&email, CHOCAN_EMAIL, &subject, "Body", &name)
-                .map_err(Error::Io)?;
+        for (
+            member_email,
+            member_name,
+            member_id,
+            member_address,
+            member_city,
+            member_state,
+            member_zipcode,
+            service_date,
+            provider_id,
+            service_id,
+        ) in rows.flatten()
+        {
+            let subject: String =
+                "Member Report for ".to_owned() + &member_name;
+            let body = format!(
+                "Member name: {}\n
+                Member number: {}\n
+                Member street address: {}\n
+                Member city: {}\n
+                Member state: {}\n
+                Member zip code: {}\n
+                Date of service: {}\n
+                Provider name: {}\n
+                Service name: {}\n",
+                member_name,
+                member_id,
+                member_address,
+                member_city,
+                member_state,
+                member_zipcode,
+                service_date,
+                provider_id,
+                service_id,
+            );
+            send_member_report(
+                &member_email,
+                CHOCAN_EMAIL,
+                &subject,
+                &body,
+                &member_name,
+            )
+            .map_err(Error::Io)?;
         }
         Ok(())
     }
@@ -859,15 +917,17 @@ mod tests {
         person
     }
 
-    fn create_a_unique_consultation(provider_id: u32) -> Consultation {
+    fn create_a_unique_consultation(
+        member_id: u32,
+        provider_id: u32,
+    ) -> Consultation {
         let consul = Consultation::new(
             "01-13-2025 03:45:30",
             "01-12-2025",
             provider_id,
-            777777777,
+            member_id,
             123456,
-            "This is a comment for a consultation created by 
-            create_a_unique_consultation",
+            "This is a comment created by create_a_unique_consultation",
         )
         .unwrap();
         consul
@@ -916,15 +976,15 @@ mod tests {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
 
-        db.add_consultation_record(&create_a_unique_consultation(1))
+        db.add_consultation_record(&create_a_unique_consultation(1, 1))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(2))
+        db.add_consultation_record(&create_a_unique_consultation(2, 2))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(3))
+        db.add_consultation_record(&create_a_unique_consultation(3, 3))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(4))
+        db.add_consultation_record(&create_a_unique_consultation(4, 4))
             .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(5))
+        db.add_consultation_record(&create_a_unique_consultation(5, 5))
             .unwrap();
         match db.send_manager_report() {
             Ok(_) => (),
@@ -1193,6 +1253,33 @@ mod tests {
         let name = db.get_service_name(123456).unwrap();
         if name != "Service1" {
             panic!("Name should match for retrieved name.");
+        }
+    }
+
+    #[test]
+    fn final_test() {
+        remove_test_db();
+        let db = DB::new("./final_test.db3").unwrap();
+
+        db.add_member(&create_a_unique_person("MemberName1", 1))
+            .unwrap();
+        db.add_member(&create_a_unique_person("MemberName2", 2))
+            .unwrap();
+        db.add_member(&create_a_unique_person("MemberName3", 3))
+            .unwrap();
+        db.add_member(&create_a_unique_person("MemberName4", 4))
+            .unwrap();
+        db.add_member(&create_a_unique_person("MemberName5", 5))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(1, 1))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(1, 2))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(1, 3))
+            .unwrap();
+        match db.send_member_reports() {
+            Ok(_) => (),
+            Err(err) => panic!("send_member_reports() ERROR: {}", err),
         }
     }
 }
