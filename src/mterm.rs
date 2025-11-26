@@ -27,11 +27,19 @@ pub fn run_man_term(db: &DB) {
         match choice.as_str() {
             "1" => add_person_ui(db),
             "2" => remove_person(db),
-            "3" => match db.send_manager_report() {
-                Ok(()) => println!("Manager report sent."),
-                Err(e) => eprintln!("Error sending report: {e}"),
+            "3" => match db.send_member_reports() {
+                Ok(()) => println!("Member reports sent."),
+                Err(e) => eprintln!("Error sending member reports: {e}"),
             },
-            "4" => quit = true,
+            "4" => match db.send_provider_reports() {
+                Ok(()) => println!("Provider reports sent."),
+                Err(e) => eprintln!("Error sending provider reports: {e}"),
+            },
+            "5" => match db.send_manager_report() {
+                Ok(()) => println!("Manager report sent."),
+                Err(e) => eprintln!("Error sending manager report: {e}"),
+            },
+            "6" => quit = true,
             _ => println!("Invalid input."),
         }
     }
@@ -41,10 +49,12 @@ pub fn run_man_term(db: &DB) {
 //returns string
 fn display_options() -> String {
     println!("----MANAGER TERMINAL----");
-    println!("1. Add new member");
-    println!("2. Remove member");
-    println!("3. Request report");
-    println!("4. Quit");
+    println!("1. Add new person");
+    println!("2. Remove person");
+    println!("3. Send out member reports");
+    println!("4. Send out provider reports");
+    println!("5. Request manager report");
+    println!("6. Quit");
     read_choice()
 }
 
@@ -63,9 +73,9 @@ fn read_choice() -> String {
 //adds member to the database
 //param DB - database to add the member too
 fn add_person_ui(db: &DB) {
-    println!("----Add New Member----");
+    println!("----Add New Person----");
     let name = read_line("Name:");
-    let id_str = read_line("9 digit member ID:");
+    let id_str = read_line("9 digit ID:");
     let address = read_line("Street address:");
     let city = read_line("City name:");
     let state = read_line("State (2 letters):");
