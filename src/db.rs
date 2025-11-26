@@ -235,16 +235,14 @@ impl DB {
                     service_id,
                 );
                 reports.insert(member_id, (email, subject, body, name));
-            } else {
-                if let Some(values) = reports.get_mut(&member_id) {
-                    let new_body: String = "".to_string();
-                    *values = (
-                        values.0.clone(),
-                        values.1.clone(),
-                        new_body,
-                        values.3.clone(),
-                    );
-                }
+            } else if let Some(values) = reports.get_mut(&member_id) {
+                values.3.push_str("More body");
+                *values = (
+                    values.0.clone(),
+                    values.1.clone(),
+                    values.3.clone(),
+                    values.3.clone(),
+                );
             }
         }
 
