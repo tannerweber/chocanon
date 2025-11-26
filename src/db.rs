@@ -241,14 +241,14 @@ impl DB {
             .map_err(Error::Sql)?;
         let mut report: String = "".to_string();
         for consul in rows.flatten() {
-            report.push_str(&format!("{}", consul));
+            report.push_str(&format!("{}\n", consul));
         }
         send_manager_report(
             "manager@pdx.edu",
             CHOCAN_EMAIL,
             "Manager report",
             &report,
-            "Manager",
+            "ManagerName",
         )
         .map_err(Error::Io)?;
         Ok(())
@@ -264,12 +264,32 @@ impl DB {
     ///
     /// Will return `Err` if not sent.
     pub fn send_provider_directory(&self, email: &str) -> Result<(), Error> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT
+                service_id,
+                name
+            FROM provider_directory",
+            )
+            .map_err(Error::Sql)?;
+        let rows = stmt
+            .query_map([], |row| {
+                let service_id: u32 = row.get(0)?;
+                let name: String = row.get(1)?;
+                Ok((service_id, name))
+            })
+            .map_err(Error::Sql)?;
+        let mut email_body: String = "".to_string();
+        for (service_id, name) in rows.flatten() {
+            email_body.push_str(&format!("{} ID: {}\n", name, service_id));
+        }
         send_provider_directory(
             email,
             CHOCAN_EMAIL,
             "Provider Directory",
-            "The body",
-            "Provider",
+            &email_body,
+            "ProviderName",
         )
         .map_err(Error::Io)?;
         Ok(())
@@ -507,6 +527,31 @@ impl DB {
             &consul.comments,
         ])
         .map_err(Error::Sql)?;
+        Ok(())
+    }
+
+    /// Adds a service to the provider directory.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the service.
+    /// * `name` - The name of the service.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the service was not added.
+    pub fn add_service(&self, id: u32, name: &str) -> Result<(), Error> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "INSERT INTO provider_directory (
+                service_id,
+                name
+            ) VALUES (?1, ?2)",
+            )
+            .map_err(Error::Sql)?;
+        stmt.execute(rusqlite::params![id, name,])
+            .map_err(Error::Sql)?;
         Ok(())
     }
 }
@@ -770,7 +815,8 @@ mod tests {
             provider_id,
             777777777,
             123456,
-            "This is a comment for a consultation",
+            "This is a comment for a consultation created by 
+            create_a_unique_consultation",
         )
         .unwrap();
         consul
@@ -783,7 +829,8 @@ mod tests {
             123456789,
             987654321,
             123456,
-            "This is a comment.",
+            "This is a comment for a consultation create by 
+            get_a_consultation.",
         )
         .unwrap();
         consul
@@ -801,15 +848,15 @@ mod tests {
     fn test_send_member_reports() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
-        db.add_member(&create_a_unique_person("Member Name1", 1))
+        db.add_member(&create_a_unique_person("MemberName1", 1))
             .unwrap();
-        db.add_member(&create_a_unique_person("Member Name2", 2))
+        db.add_member(&create_a_unique_person("MemberName2", 2))
             .unwrap();
-        db.add_member(&create_a_unique_person("Member Name3", 3))
+        db.add_member(&create_a_unique_person("MemberName3", 3))
             .unwrap();
-        db.add_member(&create_a_unique_person("Member Name4", 4))
+        db.add_member(&create_a_unique_person("MemberName4", 4))
             .unwrap();
-        db.add_member(&create_a_unique_person("Member Name5", 5))
+        db.add_member(&create_a_unique_person("MemberName5", 5))
             .unwrap();
         match db.send_member_reports() {
             Ok(_) => (),
@@ -841,7 +888,14 @@ mod tests {
     }
 
     #[test]
-    fn test_send_provider_directory() {}
+    fn test_send_provider_directory() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        db.add_service(111111, "Therapy1").unwrap();
+        db.add_service(111112, "Therapy2").unwrap();
+        db.add_service(111113, "Therapy3").unwrap();
+        db.send_provider_directory("providername@pdx.edu").unwrap();
+    }
 
     #[test]
     fn test_is_valid_member_id() {}
