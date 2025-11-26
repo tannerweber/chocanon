@@ -1,6 +1,14 @@
 # ChocAn
 
-Chocaholics Anonymous simulator
+Chocaholics Anonymous simulator for CS 314, Fall 2025, Portland
+State University.
+
+## Authors
+* Tanner Weber
+* Miles Turoczy
+* Torin Costales
+* Cristian Hernandez
+* Jethro Fernandez
 
 # Building
 
