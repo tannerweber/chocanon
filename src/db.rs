@@ -17,6 +17,7 @@
 
 use crate::esend::*;
 use rusqlite::{Connection, OpenFlags};
+use std::collections::HashMap;
 
 const MAX_NAME_SIZE: u32 = 25;
 const MAX_MEMBER_ID: u32 = 999999999; // 9 Digits
@@ -177,96 +178,78 @@ impl DB {
     pub fn send_member_reports(&self) -> Result<(), Error> {
         // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
         // ONLY SEND REPORTS FOR NOT SUSPENDED
+        let mut reports = HashMap::new();
         let mut stmt = self
             .conn
             .prepare(
                 "SELECT
-                members.email,
-                members.name,
-                members.id,
-                members.address,
-                members.city,
-                members.state,
-                members.zipcode,
                 consultations.service_date,
-                consultations.provider_id,
+                consultations.member_id,
                 consultations.service_code
-                FROM members
-                INNER JOIN consultations
-                ON members.id = consultations.member_id
-                WHERE members.is_valid = 1
+                FROM consultations
                 ORDER BY consultations.service_date ASC",
             )
             .map_err(Error::Sql)?;
         let rows = stmt
             .query_map([], |row| {
-                let member_email: String = row.get(0)?;
-                let member_name: String = row.get(1)?;
-                let member_id: u32 = row.get(2)?;
-                let member_address: String = row.get(3)?;
-                let member_city: String = row.get(4)?;
-                let member_state: String = row.get(5)?;
-                let member_zipcode: u32 = row.get(6)?;
-                let service_date: String = row.get(7)?;
-                let provider_id: u32 = row.get(8)?;
-                let service_id: u32 = row.get(9)?;
-                Ok((
-                    member_email,
-                    member_name,
-                    member_id,
-                    member_address,
-                    member_city,
-                    member_state,
-                    member_zipcode,
-                    service_date,
-                    provider_id,
-                    service_id,
-                ))
+                let service_date: String = row.get(0)?;
+                let member_id: u32 = row.get(1)?;
+                let provider_id: u32 = row.get(2)?;
+                let service_id: u32 = row.get(3)?;
+                Ok((service_date, member_id, provider_id, service_id))
             })
             .map_err(Error::Sql)?;
-        for (
-            member_email,
-            member_name,
-            member_id,
-            member_address,
-            member_city,
-            member_state,
-            member_zipcode,
-            service_date,
-            provider_id,
-            service_id,
-        ) in rows.flatten()
+        // Create the emails
+        for (service_date, member_id, provider_id, service_id) in rows.flatten()
         {
-            let subject: String =
-                "Member Report for ".to_owned() + &member_name;
-            let body = format!(
-                "Member name: {}\n
-                Member number: {}\n
-                Member street address: {}\n
-                Member city: {}\n
-                Member state: {}\n
-                Member zip code: {}\n
-                Date of service: {}\n
-                Provider name: {}\n
-                Service name: {}\n",
-                member_name,
-                member_id,
-                member_address,
-                member_city,
-                member_state,
-                member_zipcode,
-                service_date,
-                provider_id,
-                service_id,
-            );
-            send_member_report(
-                &member_email,
-                CHOCAN_EMAIL,
-                &subject,
-                &body,
-                &member_name,
-            )
-            .map_err(Error::Io)?;
+            let member: PersonInfo = self.get_member_info(member_id)?;
+            let provider: PersonInfo = self.get_provider_info(provider_id)?;
+            let email: String = member.email;
+            let name: String = member.name;
+            let address: String = member.location.address;
+            let city: String = member.location.city;
+            // let state: String = member.location.state; FIX FIX FIX FIX
+            let state: String = "OR".to_string();
+            let zipcode: u32 = member.location.zipcode;
+            let provider_name: String = provider.name;
+            let subject = "Member Report for ".to_owned() + &name;
+            if !reports.contains_key(&member_id) {
+                let body = format!(
+                    "Member name: {}\n
+                    Member number: {}\n
+                    Member street address: {}\n
+                    Member city: {}\n
+                    Member state: {}\n
+                    Member zip code: {}\n
+                    Date of service: {}\n
+                    Provider name: {}\n
+                    Service name: {}\n",
+                    name,
+                    member_id,
+                    address,
+                    city,
+                    state,
+                    zipcode,
+                    service_date,
+                    provider_name,
+                    service_id,
+                );
+                reports.insert(member_id, (email, subject, body, name));
+            } else if let Some(values) = reports.get_mut(&member_id) {
+                values.3.push_str("More body");
+                *values = (
+                    values.0.clone(),
+                    values.1.clone(),
+                    values.3.clone(),
+                    values.3.clone(),
+                );
+            }
+        }
+
+        // Send out all the emails.
+        for (_key, (email, subject, body, name)) in reports {
+            send_member_report(&email, CHOCAN_EMAIL, &subject, &body, &name)
+                .map_err(Error::Io)?;
         }
         Ok(())
     }
@@ -665,6 +648,94 @@ impl DB {
             .map_err(Error::Sql)?;
         if let Some(name) = rows.flatten().next() {
             return Ok(name);
+        }
+        Err(Error::Sql(rusqlite::Error::QueryReturnedNoRows))
+    }
+
+    /// Gets the data for a member in the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the member to get the data for.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the data could not be retrieved.
+    pub fn get_member_info(&self, id: u32) -> Result<PersonInfo, Error> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT
+                name,
+                address,
+                city,
+                state,
+                zipcode,
+                email
+                FROM members WHERE id = ?",
+            )
+            .map_err(Error::Sql)?;
+        let rows = stmt
+            .query_map([id], |row| {
+                let name: String = row.get(0)?;
+                let address: String = row.get(1)?;
+                let city: String = row.get(2)?;
+                //let state: [char; STATE_SIZE] = row.get(3)?; FIX FIX FIX
+                let state: [char; STATE_SIZE] = ['O', 'R'];
+                let zipcode: u32 = row.get(4)?;
+                let email: String = row.get(5)?;
+                let location =
+                    LocationInfo::new(&address, &city, &state, zipcode)
+                        .unwrap();
+                Ok(PersonInfo::new(&name, id, &location, &email).unwrap())
+            })
+            .map_err(Error::Sql)?;
+        if let Some(person) = rows.flatten().next() {
+            return Ok(person);
+        }
+        Err(Error::Sql(rusqlite::Error::QueryReturnedNoRows))
+    }
+
+    /// Gets the data for a provider in the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the provider to get the data for.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the data could not be retrieved.
+    pub fn get_provider_info(&self, id: u32) -> Result<PersonInfo, Error> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT
+                name,
+                address,
+                city,
+                state,
+                zipcode,
+                email
+                FROM providers WHERE id = ?",
+            )
+            .map_err(Error::Sql)?;
+        let rows = stmt
+            .query_map([id], |row| {
+                let name: String = row.get(0)?;
+                let address: String = row.get(1)?;
+                let city: String = row.get(2)?;
+                //let state: [char; STATE_SIZE] = row.get(3)?; FIX FIX FIX
+                let state: [char; STATE_SIZE] = ['O', 'R'];
+                let zipcode: u32 = row.get(4)?;
+                let email: String = row.get(5)?;
+                let location =
+                    LocationInfo::new(&address, &city, &state, zipcode)
+                        .unwrap();
+                Ok(PersonInfo::new(&name, id, &location, &email).unwrap())
+            })
+            .map_err(Error::Sql)?;
+        if let Some(person) = rows.flatten().next() {
+            return Ok(person);
         }
         Err(Error::Sql(rusqlite::Error::QueryReturnedNoRows))
     }
@@ -1270,4 +1341,10 @@ mod tests {
             panic!("Name should match for retrieved name.");
         }
     }
+
+    #[test]
+    fn test_get_member_info() {}
+
+    #[test]
+    fn test_get_provider_info() {}
 }
