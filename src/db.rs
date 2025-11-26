@@ -472,7 +472,10 @@ impl DB {
             .conn
             .prepare("DELETE FROM members WHERE id = ?")
             .map_err(Error::Sql)?;
-        stmt.execute(rusqlite::params![id]).map_err(Error::Sql)?;
+        let n = stmt.execute(rusqlite::params![id]).map_err(Error::Sql)?;
+        if n == 0 {
+            return Err(Error::Sql(rusqlite::Error::QueryReturnedNoRows));
+        }
         Ok(())
     }
 
@@ -490,7 +493,10 @@ impl DB {
             .conn
             .prepare("DELETE FROM providers WHERE id = ?")
             .map_err(Error::Sql)?;
-        stmt.execute(rusqlite::params![id]).map_err(Error::Sql)?;
+        let n = stmt.execute(rusqlite::params![id]).map_err(Error::Sql)?;
+        if n == 0 {
+            return Err(Error::Sql(rusqlite::Error::QueryReturnedNoRows));
+        }
         Ok(())
     }
 
@@ -838,14 +844,6 @@ mod tests {
         consul
     }
 
-    fn get_populated_database() -> DB {
-        remove_test_db();
-        let db = DB::new(TEST_DB_PATH).unwrap();
-        let person = get_a_person();
-        db.add_member(&person).unwrap();
-        db
-    }
-
     #[test]
     fn test_send_member_reports() {
         remove_test_db();
@@ -1039,14 +1037,41 @@ mod tests {
                 panic!("add_member() ERROR: {}", err);
             }
         }
+        match db.add_member(&person) {
+            Ok(_) => panic!("Member should already exist and not be added."),
+            Err(_) => (),
+        }
     }
 
     #[test]
-    fn test_add_provider() {}
+    fn test_add_provider() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        let person: PersonInfo = get_a_person();
+        match db.add_provider(&person) {
+            Ok(_) => (),
+            Err(err) => {
+                panic!("add_provider() ERROR: {}", err);
+            }
+        }
+        match db.add_provider(&person) {
+            Ok(_) => panic!("Provider should already exist and not be added."),
+            Err(_) => (),
+        }
+    }
 
     #[test]
     fn test_remove_member() {
-        let db = get_populated_database();
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        match db.remove_member(123456789) {
+            Ok(_) => {
+                panic!("Member should not exist and not be able to be removed.")
+            }
+            Err(_) => (),
+        }
+        db.add_member(&create_a_unique_person("MemberName", 123456789))
+            .unwrap();
         match db.remove_member(123456789) {
             Ok(_) => (),
             Err(err) => panic!("remove_member() ERROR: {}", err),
@@ -1054,7 +1079,24 @@ mod tests {
     }
 
     #[test]
-    fn test_remove_provider() {}
+    fn test_remove_provider() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        match db.remove_provider(123456789) {
+            Ok(_) => {
+                panic!(
+                    "Provider should not exist and not be able to be removed."
+                )
+            }
+            Err(_) => (),
+        }
+        db.add_provider(&create_a_unique_person("ProviderName", 123456789))
+            .unwrap();
+        match db.remove_provider(123456789) {
+            Ok(_) => (),
+            Err(err) => panic!("remove_provider() ERROR: {}", err),
+        }
+    }
 
     #[test]
     fn test_add_consultation_record() {
