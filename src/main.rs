@@ -55,7 +55,7 @@ Choice: "
         }
         MenuOption::ManagerTerminal => {
             println!("Chose manager terminal");
-            // mterm::run_man_term(&db);
+            mterm::run_man_term(&db);
         }
     }
     Ok(())
