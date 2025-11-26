@@ -99,20 +99,20 @@ fn add_person_ui(db: &DB) {
     };
 
     //set state input to an array of 2 uppercase chars
+    if state.chars().count() != 2 {
+        eprintln!("State must be 2 characters.");
+        return;
+    }
     let state_upper = state.trim().to_uppercase();
-    let mut chars = state_upper.chars();
-    let state0 = chars.next().unwrap_or(' ');
-    let state1 = chars.next().unwrap_or(' ');
-    let state_arr = [state0, state1];
 
-    let location = match LocationInfo::new(&address, &city, &state_arr, zipcode)
-    {
-        Ok(loc) => loc,
-        Err(msg) => {
-            eprintln!("Location error {msg}");
-            return;
-        }
-    };
+    let location =
+        match LocationInfo::new(&address, &city, &state_upper, zipcode) {
+            Ok(loc) => loc,
+            Err(msg) => {
+                eprintln!("Location error {msg}");
+                return;
+            }
+        };
 
     let person = match PersonInfo::new(&name, id, &location, &email) {
         Ok(p) => p,

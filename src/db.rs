@@ -208,8 +208,7 @@ impl DB {
             let name: String = member.name;
             let address: String = member.location.address;
             let city: String = member.location.city;
-            // let state: String = member.location.state; FIX FIX FIX FIX
-            let state: String = "OR".to_string();
+            let state: String = member.location.state;
             let zipcode: u32 = member.location.zipcode;
             let provider_name: String = provider.name;
             let subject = "Member Report for ".to_owned() + &name;
@@ -446,8 +445,6 @@ impl DB {
     ///
     /// Will return `Err` if the member was not added.
     pub fn add_member(&self, person: &PersonInfo) -> Result<(), Error> {
-        let state: String = person.location.state.iter().collect();
-
         let mut stmt = self
             .conn
             .prepare(
@@ -468,7 +465,7 @@ impl DB {
             &person.name,
             &person.location.address,
             &person.location.city,
-            &state,
+            &person.location.state,
             &person.location.zipcode,
             &person.email,
             1,
@@ -487,8 +484,6 @@ impl DB {
     ///
     /// Will return `Err` if the provider was not added.
     pub fn add_provider(&self, person: &PersonInfo) -> Result<(), Error> {
-        let state: String = person.location.state.iter().collect();
-
         let mut stmt = self
             .conn
             .prepare(
@@ -509,7 +504,7 @@ impl DB {
             &person.name,
             &person.location.address,
             &person.location.city,
-            &state,
+            &person.location.state,
             &person.location.zipcode,
             &person.email,
             1,
@@ -680,8 +675,7 @@ impl DB {
                 let name: String = row.get(0)?;
                 let address: String = row.get(1)?;
                 let city: String = row.get(2)?;
-                //let state: [char; STATE_SIZE] = row.get(3)?; FIX FIX FIX
-                let state: [char; STATE_SIZE] = ['O', 'R'];
+                let state: String = row.get(3)?;
                 let zipcode: u32 = row.get(4)?;
                 let email: String = row.get(5)?;
                 let location =
@@ -724,8 +718,7 @@ impl DB {
                 let name: String = row.get(0)?;
                 let address: String = row.get(1)?;
                 let city: String = row.get(2)?;
-                //let state: [char; STATE_SIZE] = row.get(3)?; FIX FIX FIX
-                let state: [char; STATE_SIZE] = ['O', 'R'];
+                let state: String = row.get(3)?;
                 let zipcode: u32 = row.get(4)?;
                 let email: String = row.get(5)?;
                 let location =
@@ -801,7 +794,7 @@ impl PersonInfo {
 pub struct LocationInfo {
     address: String,
     city: String,
-    state: [char; STATE_SIZE],
+    state: String,
     zipcode: u32,
 }
 
@@ -821,7 +814,7 @@ impl LocationInfo {
     pub fn new(
         address: &str,
         city: &str,
-        state: &[char; STATE_SIZE],
+        state: &str,
         zipcode: u32,
     ) -> Result<Self, String> {
         if address.chars().count() > MAX_ADDRESS_SIZE.try_into().unwrap() {
@@ -845,7 +838,7 @@ impl LocationInfo {
         Ok(LocationInfo {
             address: address.to_string(),
             city: city.to_string(),
-            state: *state,
+            state: state.to_string(),
             zipcode,
         })
     }
@@ -972,8 +965,7 @@ mod tests {
 
     fn get_a_person() -> PersonInfo {
         let location =
-            LocationInfo::new("1234 Main st", "Portland", &['O', 'R'], 56789)
-                .unwrap();
+            LocationInfo::new("1234 Main st", "Portland", "OR", 56789).unwrap();
         let person = PersonInfo::new(
             "Timmy Smith",
             123456789,
@@ -986,8 +978,7 @@ mod tests {
 
     fn create_a_unique_person(name: &str, id: u32) -> PersonInfo {
         let location =
-            LocationInfo::new("1234 Main st", "Portland", &['O', 'R'], 56789)
-                .unwrap();
+            LocationInfo::new("1234 Main st", "Portland", "OR", 56789).unwrap();
         let email = format!("{}@pdx.edu", name);
         let person = PersonInfo::new(name, id, &location, &email).unwrap();
         person
