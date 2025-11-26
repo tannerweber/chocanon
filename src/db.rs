@@ -366,7 +366,9 @@ impl DB {
     pub fn is_valid_service_id(&self, id: u32) -> Result<bool, Error> {
         let mut stmt = self
             .conn
-            .prepare("SELECT COUNT(*) FROM services WHERE id = ?")
+            .prepare(
+                "SELECT COUNT(*) FROM provider_directory WHERE service_id = ?",
+            )
             .map_err(Error::Sql)?;
         let count: u32 = stmt
             .query_row(rusqlite::params![id], |row| row.get(0))
@@ -898,13 +900,133 @@ mod tests {
     }
 
     #[test]
-    fn test_is_valid_member_id() {}
+    fn test_is_valid_member_id() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        db.add_member(&create_a_unique_person("MemberName", 1))
+            .unwrap();
+        db.add_member(&create_a_unique_person("MemberName", 2))
+            .unwrap();
+        db.add_member(&create_a_unique_person("MemberName", 123456789))
+            .unwrap();
+        match db.is_valid_member_id(1) {
+            Ok(valid) => {
+                if !valid {
+                    panic!("Id should be valid")
+                }
+            }
+            Err(err) => panic!("is_valid_member_id() ERROR: {}", err),
+        }
+        match db.is_valid_member_id(2) {
+            Ok(valid) => {
+                if !valid {
+                    panic!("Id should be valid")
+                }
+            }
+            Err(err) => panic!("is_valid_member_id() ERROR: {}", err),
+        }
+        match db.is_valid_member_id(123456789) {
+            Ok(valid) => {
+                if !valid {
+                    panic!("Id should be valid")
+                }
+            }
+            Err(err) => panic!("is_valid_member_id() ERROR: {}", err),
+        }
+        match db.is_valid_member_id(666666666) {
+            Ok(exists) => {
+                if exists {
+                    panic!("Member id should be invalid.");
+                }
+            }
+            Err(_) => (),
+        }
+    }
 
     #[test]
-    fn test_is_valid_provider_id() {}
+    fn test_is_valid_provider_id() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        db.add_provider(&create_a_unique_person("ProviderName", 1))
+            .unwrap();
+        db.add_provider(&create_a_unique_person("ProviderName", 2))
+            .unwrap();
+        db.add_provider(&create_a_unique_person("ProviderName", 123456789))
+            .unwrap();
+        match db.is_valid_provider_id(1) {
+            Ok(valid) => {
+                if !valid {
+                    panic!("Id should be valid")
+                }
+            }
+            Err(err) => panic!("is_valid_provider_id() ERROR: {}", err),
+        }
+        match db.is_valid_provider_id(2) {
+            Ok(valid) => {
+                if !valid {
+                    panic!("Id should be valid")
+                }
+            }
+            Err(err) => panic!("is_valid_provider_id() ERROR: {}", err),
+        }
+        match db.is_valid_provider_id(123456789) {
+            Ok(valid) => {
+                if !valid {
+                    panic!("Id should be valid")
+                }
+            }
+            Err(err) => panic!("is_valid_provider_id() ERROR: {}", err),
+        }
+        match db.is_valid_provider_id(666666666) {
+            Ok(exists) => {
+                if exists {
+                    panic!("Provider id should be invalid.");
+                }
+            }
+            Err(_) => (),
+        }
+    }
 
     #[test]
-    fn test_is_valid_service_id() {}
+    fn test_is_valid_service_id() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        db.add_service(1, "Therapy1").unwrap();
+        db.add_service(2, "Therapy2").unwrap();
+        db.add_service(123456, "Therapy3").unwrap();
+        match db.is_valid_service_id(1) {
+            Ok(valid) => {
+                if !valid {
+                    panic!("Id should be valid")
+                }
+            }
+            Err(err) => panic!("is_valid_service_id() ERROR: {}", err),
+        }
+        match db.is_valid_service_id(2) {
+            Ok(valid) => {
+                if !valid {
+                    panic!("Id should be valid")
+                }
+            }
+            Err(err) => panic!("is_valid_service_id() ERROR: {}", err),
+        }
+        match db.is_valid_service_id(123456) {
+            Ok(valid) => {
+                if !valid {
+                    panic!("Id should be valid")
+                }
+            }
+            Err(err) => panic!("is_valid_service_id() ERROR: {}", err),
+        }
+        match db.is_valid_service_id(666666666) {
+            Ok(valid) => {
+                if valid {
+                    panic!("Id should be invalid.");
+                }
+            }
+            Err(_) => (),
+        }
+    }
 
     #[test]
     fn test_add_member() {
