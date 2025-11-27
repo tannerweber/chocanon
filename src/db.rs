@@ -214,31 +214,23 @@ impl DB {
             let zipcode: u32 = member.location.zipcode;
             let provider_name: String = provider.name;
             let subject = "Member Report for ".to_owned() + &name;
+            let consul_text = "----------------------------------------\n"
+                .to_string()
+                + &format!("Date of service: {}\n", service_name)
+                + &format!("Provider name: {}\n", provider_name)
+                + &format!("Service name: {}\n", service_date);
 
             if !reports.contains_key(&member_id) {
-                let body = format!(
-                    "Member name: {}\n
-                    Member number: {}\n
-                    Member street address: {}\n
-                    Member city: {}\n
-                    Member state: {}\n
-                    Member zip code: {}\n
-                    Date of service: {}\n
-                    Provider name: {}\n
-                    Service name: {}\n",
-                    name,
-                    member_id,
-                    address,
-                    city,
-                    state,
-                    zipcode,
-                    service_date,
-                    provider_name,
-                    service_name,
-                );
+                let body = format!("Member name: {}\n", name)
+                    + &format!("Member number: {}\n", member_id)
+                    + &format!("Member street address: {}\n", address)
+                    + &format!("Member city: {}\n", city)
+                    + &format!("Member state: {}\n", state)
+                    + &format!("Member zip code: {}\n", zipcode);
                 reports.insert(member_id, (email, subject, body, name));
-            } else if let Some(values) = reports.get_mut(&member_id) {
-                values.2.push_str("<More body>");
+            }
+            if let Some(values) = reports.get_mut(&member_id) {
+                values.2.push_str(&consul_text);
                 *values = (
                     values.0.clone(),
                     values.1.clone(),
