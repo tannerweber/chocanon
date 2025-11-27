@@ -185,6 +185,7 @@ impl DB {
                 "SELECT
                 consultations.service_date,
                 consultations.member_id,
+                consultations.provider_id,
                 consultations.service_code
                 FROM consultations
                 ORDER BY consultations.service_date ASC",
@@ -204,6 +205,7 @@ impl DB {
         {
             let member: PersonInfo = self.get_member_info(member_id)?;
             let provider: PersonInfo = self.get_provider_info(provider_id)?;
+            let service_name: String = self.get_service_name(service_id)?;
             let email: String = member.email;
             let name: String = member.name;
             let address: String = member.location.address;
@@ -212,6 +214,7 @@ impl DB {
             let zipcode: u32 = member.location.zipcode;
             let provider_name: String = provider.name;
             let subject = "Member Report for ".to_owned() + &name;
+
             if !reports.contains_key(&member_id) {
                 let body = format!(
                     "Member name: {}\n
@@ -231,15 +234,15 @@ impl DB {
                     zipcode,
                     service_date,
                     provider_name,
-                    service_id,
+                    service_name,
                 );
                 reports.insert(member_id, (email, subject, body, name));
             } else if let Some(values) = reports.get_mut(&member_id) {
-                values.3.push_str("More body");
+                values.2.push_str("<More body>");
                 *values = (
                     values.0.clone(),
                     values.1.clone(),
-                    values.3.clone(),
+                    values.2.clone(),
                     values.3.clone(),
                 );
             }
@@ -1018,7 +1021,7 @@ mod tests {
     fn test_send_member_reports() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
-
+        db.add_service(123456, "ServiceName123456").unwrap();
         db.add_member(&create_a_unique_person("MemberName1", 1))
             .unwrap();
         db.add_member(&create_a_unique_person("MemberName2", 2))
