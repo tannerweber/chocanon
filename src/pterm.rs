@@ -15,7 +15,7 @@
 
 //! Module for the provider terminal.
 
-use crate::db::DB;
+use crate::db::{Consultation, DB};
 use std::io::{self, Write};
 
 enum MenuOption {
@@ -26,16 +26,63 @@ enum MenuOption {
 
 pub fn run(db: &DB) {
     let mut quit: bool = false;
-    while quit != true {
+    while !quit {
         print_menu_options();
         let option = get_menu_option();
 
         match option {
             MenuOption::AddConsultationRecord => {
-                // db.add_consultation_record();
+                // Add code here to get a consultation record first, then pass it into the add_consultation_record function
+
+                let curr_date = input("Current date: ");
+                let service_date = input("Service date: ");
+                let provider_id: u32 =
+                    input("Provider ID: ").parse().unwrap_or(0);
+                let member_id: u32 = input("Member ID: ").parse().unwrap();
+                let service_code: u32 =
+                    input("Service code: ").parse().unwrap();
+                let comments = input("Comments: ");
+
+                let consul = match Consultation::new(
+                    curr_date.as_str(),
+                    service_date.as_str(),
+                    provider_id,
+                    member_id,
+                    service_code,
+                    comments.as_str(),
+                ) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        println!("Error creating consultation: {}", e);
+                        return;
+                    }
+                };
+
+                match db.add_consultation_record(&consul) {
+                    Ok(_) => {
+                        println!("Consultation record added successfully.")
+                    }
+                    Err(e) => {
+                        println!("Failed to add consultation record: {}", e)
+                    }
+                }
             }
             MenuOption::GetProviderDirectory => {
-                // db.get_provider_directory();
+                print!("Please enter your email address: ");
+                io::stdout().flush().unwrap();
+
+                let mut email = String::new();
+                io::stdin()
+                    .read_line(&mut email)
+                    .expect("Failed to read input");
+
+                let email = email.trim();
+                match db.send_provider_directory(email) {
+                    Ok(_) => println!("Retrieving Provider Directory."),
+                    Err(e) => {
+                        println!("Failed to send Provider Directory: {}", e)
+                    }
+                }
             }
             MenuOption::Quit => {
                 println!("Exiting provider terminal...");
@@ -78,4 +125,12 @@ fn get_menu_option() -> MenuOption {
             }
         }
     }
+}
+
+fn input(prompt: &str) -> String {
+    print!("{}", prompt);
+    io::stdout().flush().unwrap();
+    let mut s = String::new();
+    io::stdin().read_line(&mut s).unwrap();
+    s.trim().to_string()
 }
