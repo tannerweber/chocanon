@@ -18,6 +18,7 @@
 use crate::esend::*;
 use rusqlite::{Connection, OpenFlags};
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 
 const MAX_NAME_SIZE: u32 = 25;
 const MAX_MEMBER_ID: u32 = 999999999; // 9 Digits
@@ -200,7 +201,7 @@ impl DB {
                 Ok((service_date, member_id, provider_id, service_id))
             })
             .map_err(Error::Sql)?;
-        // Create the emails
+
         for (service_date, member_id, provider_id, service_id) in rows.flatten()
         {
             let member: PersonInfo = self.get_member_info(member_id)?;
@@ -213,7 +214,7 @@ impl DB {
                 + &format!("Provider name: {}\n", provider.name)
                 + &format!("Service name: {}\n", service_name);
 
-            if !reports.contains_key(&member_id) {
+            if let Entry::Vacant(e) = reports.entry(member_id) {
                 let body = format!("Member name: {}\n", member.name)
                     + &format!("Member number: {}\n", member_id)
                     + &format!(
@@ -226,10 +227,7 @@ impl DB {
                         "Member zip code: {}\n",
                         member.location.zipcode
                     );
-                reports.insert(
-                    member_id,
-                    (member.email, subject, body, member.name),
-                );
+                e.insert((member.email, subject, body, member.name));
             }
             if let Some(values) = reports.get_mut(&member_id) {
                 values.2.push_str(&consul_text);
@@ -242,7 +240,6 @@ impl DB {
             }
         }
 
-        // Send out all the emails.
         for (_key, (email, subject, body, name)) in reports {
             send_member_report(&email, CHOCAN_EMAIL, &subject, &body, &name)
                 .map_err(Error::Io)?;
