@@ -208,25 +208,14 @@ impl DB {
             let provider: PersonInfo = self.get_provider_info(provider_id)?;
             let service_name: String = self.get_service_name(service_id)?;
             let subject = "Member Report for ".to_owned() + &member.name;
-            let consul_text = "----------------------------------------\n"
-                .to_string()
-                + &format!("Date of service: {}\n", service_date)
-                + &format!("Provider name: {}\n", provider.name)
-                + &format!("Service name: {}\n", service_name);
+            let consul_text = Self::create_consultation_text(
+                &service_date,
+                &provider.name,
+                &service_name,
+            );
 
             if let Entry::Vacant(e) = reports.entry(member_id) {
-                let body = format!("Member name: {}\n", member.name)
-                    + &format!("Member number: {}\n", member_id)
-                    + &format!(
-                        "Member street address: {}\n",
-                        member.location.address
-                    )
-                    + &format!("Member city: {}\n", member.location.city)
-                    + &format!("Member state: {}\n", member.location.state)
-                    + &format!(
-                        "Member zip code: {}\n",
-                        member.location.zipcode
-                    );
+                let body = Self::create_member_report_body(&member);
                 e.insert((member.email, subject, body, member.name));
             }
             if let Some(values) = reports.get_mut(&member_id) {
@@ -245,6 +234,26 @@ impl DB {
                 .map_err(Error::Io)?;
         }
         Ok(())
+    }
+
+    fn create_member_report_body(member: &PersonInfo) -> String {
+        format!("Member name: {}\n", member.name)
+            + &format!("Member number: {}\n", member.id)
+            + &format!("Member street address: {}\n", member.location.address)
+            + &format!("Member city: {}\n", member.location.city)
+            + &format!("Member state: {}\n", member.location.state)
+            + &format!("Member zip code: {}\n", member.location.zipcode)
+    }
+
+    fn create_consultation_text(
+        service_date: &str,
+        provider_name: &str,
+        service_name: &str,
+    ) -> String {
+        "----------------------------------------\n".to_string()
+            + &format!("Date of service: {}\n", service_date)
+            + &format!("Provider name: {}\n", provider_name)
+            + &format!("Service name: {}\n", service_name)
     }
 
     /// Sends out all provider reports to all ChocAn providers.
