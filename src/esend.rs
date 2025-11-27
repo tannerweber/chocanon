@@ -15,7 +15,6 @@
 
 //! Module for sending emails by writing them as files.
 use std::fs::{File, create_dir_all};
-
 use std::io::prelude::*;
 
 /// The various paths in the file system where emails shall be written.
@@ -199,14 +198,57 @@ mod tests {
     }
 
     #[test]
-    fn test_send_member_report() {}
+    fn test_send_member_report() {
+        let _ =
+            send_member_report("user", "chocanon", "matter", "testst", "God");
+
+        let dir = std::path::Path::new(EmailPath::MEMBER);
+        assert!(
+            dir.read_dir().unwrap().next().is_some(),
+            "send member report did not create a file"
+        );
+    }
 
     #[test]
-    fn test_send_provider_report() {}
+    fn test_send_provider_report() {
+        let _ = send_provider_report(
+            "user1", "Chocanon", "consults", "do this", "You",
+        );
+
+        let dir = std::path::Path::new(EmailPath::PROVIDER);
+        assert!(
+            dir.read_dir().unwrap().next().is_some(),
+            "send provider report did not create a file"
+        );
+    }
 
     #[test]
-    fn test_send_manager_report() {}
+    fn test_send_manager_report() {
+        let _ = send_manager_report(
+            "Provider",
+            "Chocanon",
+            "Serious",
+            "Office NOW!",
+            "You",
+        );
+
+        let dir = std::path::Path::new(EmailPath::MANAGER);
+        assert!(
+            dir.read_dir().unwrap().next().is_some(),
+            "send manager report did not create a file"
+        );
+    }
 
     #[test]
-    fn test_send_provider_directory() {}
+    fn test_send_provider_directory() {
+        let _ = send_provider_directory(
+            "user1", "Chocanon", "consults", "do this", "You",
+        );
+
+        let dir = std::path::Path::new(EmailPath::PROVIDER);
+        assert!(
+            dir.read_dir().unwrap().next().is_some(),
+            "send provider directory did not create a file"
+        );
+    }
 }
