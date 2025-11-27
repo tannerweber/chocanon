@@ -248,7 +248,7 @@ mod tests {
         let dir = std::path::Path::new(EmailPath::PROVIDER);
         assert!(
             dir.read_dir().unwrap().next().is_some(),
-            "send provider report did not create a file"
+            "send provider directory did not create a file"
         );
     }
 }
