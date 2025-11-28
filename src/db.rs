@@ -16,7 +16,7 @@
 //! Module for the Chocaholics Anonymous database.
 
 use crate::esend::*;
-use chrono::Local;
+use chrono::{Duration, Local};
 use regex::Regex;
 use rusqlite::{Connection, OpenFlags};
 use std::collections::HashMap;
@@ -35,6 +35,7 @@ const SERVICE_DATE_SIZE: u32 = 10; // MM-DD-YYYY
 const MAX_SERVICE_CODE: u32 = 999999; // 6 Digits
 const MAX_COMMENT_SIZE: u32 = 100;
 //
+const REPORT_DATE_RANGE: i64 = 7;
 const CHOCAN_EMAIL: &str = "chocan@pdx.edu";
 
 #[derive(Debug)]
@@ -181,7 +182,6 @@ impl DB {
     ///
     /// Will return `Err` if any reports are not sent.
     pub fn send_member_reports(&self) -> Result<(), Error> {
-        // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
         let mut reports = HashMap::new();
         let mut stmt = self
             .conn
@@ -207,11 +207,13 @@ impl DB {
 
         for (service_date, member_id, provider_id, service_id) in rows.flatten()
         {
-            // if service_date
-            //     < Local::now().format("%m-%d-%Y_%H:%M:%S").to_string()
-            // {
-            //     continue;
-            // }
+            if service_date
+                < (Local::now() - Duration::days(REPORT_DATE_RANGE))
+                    .format("%m-%d-%Y")
+                    .to_string()
+            {
+                continue;
+            }
             let member: PersonInfo = self.get_member_info(member_id)?;
             let provider: PersonInfo = self.get_provider_info(provider_id)?;
             let service_name: String = self.get_service_name(service_id)?;
@@ -1002,13 +1004,20 @@ mod tests {
         person
     }
 
+    /// Creates a consultation with a date of yesterday.
     fn create_a_unique_consultation(
         member_id: u32,
         provider_id: u32,
     ) -> Consultation {
+        let date = (Local::now() - Duration::days(1))
+            .format("%m-%d-%Y")
+            .to_string();
+        let date_time = (Local::now() - Duration::days(1))
+            .format("%m-%d-%Y %H:%M:%S")
+            .to_string();
         let consul = Consultation::new(
-            "01-13-2025 03:45:30",
-            "01-12-2025",
+            &date_time,
+            &date,
             provider_id,
             member_id,
             123456,
