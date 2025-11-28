@@ -23,5 +23,3 @@ The emails are outputted in the emails directory.
 # Testing
 
 The default make target runs testing, linting, and formatting.
-If testing fails, it may be necessary to run the testing again to create
-directories.
