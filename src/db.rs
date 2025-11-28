@@ -178,7 +178,6 @@ impl DB {
     /// Will return `Err` if any reports are not sent.
     pub fn send_member_reports(&self) -> Result<(), Error> {
         // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
-        // ONLY SEND REPORTS FOR NOT SUSPENDED
         let mut reports = HashMap::new();
         let mut stmt = self
             .conn
@@ -265,8 +264,6 @@ impl DB {
     ///
     /// Will return `Err` if any reports are not sent.
     pub fn send_provider_reports(&self) -> Result<(), Error> {
-        // ONLY SEND REPORTS FOR THOSE WITH ACTIVITY IN THE PAST WEEK
-        // ONLY SEND REPORTS FOR NOT SUSPENDED
         Ok(())
     }
 
