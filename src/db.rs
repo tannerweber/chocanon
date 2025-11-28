@@ -16,6 +16,8 @@
 //! Module for the Chocaholics Anonymous database.
 
 use crate::esend::*;
+use chrono::Local;
+use regex::Regex;
 use rusqlite::{Connection, OpenFlags};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -39,6 +41,7 @@ const CHOCAN_EMAIL: &str = "chocan@pdx.edu";
 pub enum Error {
     Io(std::io::Error),
     Sql(rusqlite::Error),
+    Regex(regex::Error),
     EmptyInput,
 }
 
@@ -47,6 +50,7 @@ impl std::fmt::Display for Error {
         match *self {
             Error::Io(ref err) => write!(f, "STD IO error: {}", err),
             Error::Sql(ref err) => write!(f, "Rusqlite error: {}", err),
+            Error::Regex(ref err) => write!(f, "Regex error: {}", err),
             Error::EmptyInput => write!(f, "Empty input error"),
         }
     }
@@ -203,6 +207,11 @@ impl DB {
 
         for (service_date, member_id, provider_id, service_id) in rows.flatten()
         {
+            // if service_date
+            //     < Local::now().format("%m-%d-%Y_%H:%M:%S").to_string()
+            // {
+            //     continue;
+            // }
             let member: PersonInfo = self.get_member_info(member_id)?;
             let provider: PersonInfo = self.get_provider_info(provider_id)?;
             let service_name: String = self.get_service_name(service_id)?;
@@ -881,9 +890,9 @@ impl Consultation {
     /// # Arguments
     ///
     /// * `curr_date` - The current date time string when the email is being
-    ///   sent. Constrained by `DATE_TIME_SIZE`.
+    ///   sent. Constrained by `DATE_TIME_SIZE`. Format: "MM-DD-YYYY HH:MM:SS".
     /// * `service_date` - The date when the consultation occured.
-    ///   Constrained by `SERVICE_DATE_SIZE`.
+    ///   Constrained by `SERVICE_DATE_SIZE`. Format: "MM-DD-YYYY".
     /// * `provider_id` - The id of the provider. Constrained
     ///   by `MAX_PROVIDER_ID`.
     /// * `member_id` - The id of the member. Constrained
@@ -915,6 +924,15 @@ impl Consultation {
             return Err(format!(
                 "service date must be equal to {} characters: {}",
                 SERVICE_DATE_SIZE, service_date
+            ));
+        }
+        let re =
+            Regex::new(r"^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-(\d{4})$")
+                .unwrap();
+        if !re.is_match(service_date) {
+            return Err(format!(
+                "service date must match format MM-DD-YYYY: {}",
+                service_date
             ));
         }
         if provider_id > MAX_PROVIDER_ID {
@@ -1012,6 +1030,34 @@ mod tests {
         )
         .unwrap();
         consul
+    }
+
+    #[test]
+    fn test_consultation_constructor() {
+        match Consultation::new(
+            "01-13-2025:07:45:39",
+            "01-13-2025",
+            123456789,
+            123456789,
+            123456,
+            "This is a comment",
+        ) {
+            Ok(_) => (),
+            Err(err) => {
+                panic!("test_consultation_constructor() ERROR: {}", err)
+            }
+        }
+        match Consultation::new(
+            "01-13-2025:07:45:39",
+            "01_13-2025",
+            123456789,
+            123456789,
+            123456,
+            "This is a comment",
+        ) {
+            Ok(_) => panic!("Invalid format should give an error"),
+            Err(_) => (),
+        }
     }
 
     #[test]
