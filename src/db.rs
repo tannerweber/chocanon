@@ -36,7 +36,7 @@ const MAX_SERVICE_CODE: u32 = 999999; // 6 Digits
 const MAX_COMMENT_SIZE: u32 = 100;
 //
 const REPORT_DATE_RANGE: i64 = 7;
-const CHOCAN_EMAIL: &str = "chocan@pdx.edu";
+const CHOCAN_EMAIL: &str = "testing@chocan.com";
 
 #[derive(Debug)]
 pub enum Error {
