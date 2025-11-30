@@ -165,7 +165,8 @@ impl DB {
                     service_id <= {}
                     AND service_id >= 0
                 ),
-                name        TEXT NOT NULL
+                name        TEXT NOT NULL,
+                fee         REAL NOT NULL CHECK (fee >= 0)
             )",
             MAX_SERVICE_CODE,
         );
@@ -710,7 +711,12 @@ impl DB {
     /// # Failure
     ///
     /// Will return `Err` if the service was not added.
-    pub fn add_service(&self, id: u32, name: &str) -> Result<(), Error> {
+    pub fn add_service(
+        &self,
+        id: u32,
+        name: &str,
+        fee: f64,
+    ) -> Result<(), Error> {
         if name.chars().count() == 0 {
             return Err(Error::EmptyInput);
         }
@@ -719,11 +725,12 @@ impl DB {
             .prepare(
                 "INSERT INTO provider_directory (
                 service_id,
-                name
-            ) VALUES (?1, ?2)",
+                name,
+                fee
+            ) VALUES (?1, ?2, ?3)",
             )
             .map_err(Error::Sql)?;
-        stmt.execute(rusqlite::params![id, name,])
+        stmt.execute(rusqlite::params![id, name, fee])
             .map_err(Error::Sql)?;
         Ok(())
     }
@@ -1174,7 +1181,7 @@ mod tests {
     fn test_send_member_reports() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
-        db.add_service(123456, "ServiceName123456").unwrap();
+        db.add_service(123456, "ServiceName123456", 99.99).unwrap();
         db.add_member(&create_a_unique_person("MemberName1", 1))
             .unwrap();
         db.add_member(&create_a_unique_person("MemberName2", 2))
@@ -1233,9 +1240,9 @@ mod tests {
     fn test_send_provider_directory() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
-        db.add_service(111111, "Therapy1").unwrap();
-        db.add_service(111112, "Therapy2").unwrap();
-        db.add_service(111113, "Therapy3").unwrap();
+        db.add_service(111111, "Therapy1", 99.99).unwrap();
+        db.add_service(111112, "Therapy2", 99.99).unwrap();
+        db.add_service(111113, "Therapy3", 99.99).unwrap();
         db.send_provider_directory("providername@pdx.edu").unwrap();
     }
 
@@ -1334,9 +1341,9 @@ mod tests {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
-        db.add_service(1, "Therapy1").unwrap();
-        db.add_service(2, "Therapy2").unwrap();
-        db.add_service(123456, "Therapy3").unwrap();
+        db.add_service(1, "Therapy1", 99.99).unwrap();
+        db.add_service(2, "Therapy2", 99.99).unwrap();
+        db.add_service(123456, "Therapy3", 99.99).unwrap();
         match db.is_valid_service_id(1) {
             Ok(valid) => {
                 if !valid {
@@ -1466,12 +1473,12 @@ mod tests {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
-        db.add_service(123456, "Service1").unwrap();
-        match db.add_service(123456, "Serv") {
+        db.add_service(123456, "Service1", 99.99).unwrap();
+        match db.add_service(123456, "Serv", 99.99) {
             Ok(_) => panic!("Error expected for duplicate ID."),
             Err(_) => (),
         }
-        match db.add_service(222222, "") {
+        match db.add_service(222222, "", 99.99) {
             Ok(_) => panic!("Error expected for empty name."),
             Err(_) => (),
         }
@@ -1486,7 +1493,7 @@ mod tests {
             Ok(_) => panic!("Error expected on empty database"),
             Err(_) => (),
         }
-        db.add_service(123456, "Service1").unwrap();
+        db.add_service(123456, "Service1", 99.99).unwrap();
         let name = db.get_service_name(123456).unwrap();
         if name != "Service1" {
             panic!("Name should match for retrieved name.");
