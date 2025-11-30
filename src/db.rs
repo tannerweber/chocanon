@@ -183,7 +183,6 @@ impl DB {
     ///
     /// Will return `Err` if any reports are not sent.
     pub fn send_member_reports(&self) -> Result<(), Error> {
-        let mut reports = HashMap::new();
         let mut stmt = self
             .conn
             .prepare(
@@ -206,6 +205,7 @@ impl DB {
             })
             .map_err(Error::Sql)?;
 
+        let mut reports = HashMap::new();
         for (service_date, member_id, provider_id, service_id) in rows.flatten()
         {
             if service_date
@@ -276,70 +276,84 @@ impl DB {
     ///
     /// Will return `Err` if any reports are not sent.
     pub fn send_provider_reports(&self) -> Result<(), Error> {
-        // let mut reports = HashMap::new();
-        // let mut stmt = self
-        //     .conn
-        //     .prepare(
-        //         "SELECT
-        //         consultations.service_date,
-        //         consultations.member_id,
-        //         consultations.provider_id,
-        //         consultations.service_code
-        //         FROM consultations
-        //         ORDER BY consultations.service_date ASC",
-        //     )
-        //     .map_err(Error::Sql)?;
-        // let rows = stmt
-        //     .query_map([], |row| {
-        //         let service_date: String = row.get(0)?;
-        //         let member_id: u32 = row.get(1)?;
-        //         let provider_id: u32 = row.get(2)?;
-        //         let service_id: u32 = row.get(3)?;
-        //         Ok((service_date, member_id, provider_id, service_id))
-        //     })
-        //     .map_err(Error::Sql)?;
-        //
-        // for (service_date, member_id, provider_id, service_id) in rows.flatten()
-        // {
-        //     if service_date
-        //         < (Local::now() - Duration::days(REPORT_DATE_RANGE))
-        //             .format("%m-%d-%Y")
-        //             .to_string()
-        //     {
-        //         continue;
-        //     }
-        //     let member: PersonInfo = self.get_member_info(member_id)?;
-        //     let provider: PersonInfo = self.get_provider_info(provider_id)?;
-        //     let service_name: String = self.get_service_name(service_id)?;
-        //     let subject = "Provider Report for ".to_owned() + &provider.name;
-        //     let consul_text = Self::create_provider_consultation_text(
-        //         &service_date,
-        //         &service_date_time,
-        //         &member.name,
-        //         member_id,
-        //         service_id,
-        //         fee,
-        //     );
-        //
-        //     if let Entry::Vacant(e) = reports.entry(member_id) {
-        //         let body = Self::create_provider_report_body(&provider);
-        //         e.insert((member.email, subject, body, member.name));
-        //     }
-        //     if let Some(values) = reports.get_mut(&member_id) {
-        //         values.2.push_str(&consul_text);
-        //         *values = (
-        //             values.0.clone(),
-        //             values.1.clone(),
-        //             values.2.clone(),
-        //             values.3.clone(),
-        //         );
-        //     }
-        // }
-        //
-        // for (_key, (email, subject, body, name)) in reports {
-        //     send_member_report(&email, CHOCAN_EMAIL, &subject, &body, &name)
-        //         .map_err(Error::Io)?;
-        // }
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT
+                consultations.service_date,
+                consultations.member_id,
+                consultations.provider_id,
+                consultations.service_code,
+                consultations.current_date_time
+                FROM consultations
+                ORDER BY consultations.service_date ASC",
+            )
+            .map_err(Error::Sql)?;
+        let rows = stmt
+            .query_map([], |row| {
+                let service_date: String = row.get(0)?;
+                let member_id: u32 = row.get(1)?;
+                let provider_id: u32 = row.get(2)?;
+                let service_id: u32 = row.get(3)?;
+                let current_date_time: String = row.get(4)?;
+                Ok((
+                    service_date,
+                    member_id,
+                    provider_id,
+                    service_id,
+                    current_date_time,
+                ))
+            })
+            .map_err(Error::Sql)?;
+
+        let mut reports = HashMap::new();
+        for (
+            service_date,
+            member_id,
+            provider_id,
+            service_id,
+            current_date_time,
+        ) in rows.flatten()
+        {
+            if service_date
+                < (Local::now() - Duration::days(REPORT_DATE_RANGE))
+                    .format("%m-%d-%Y")
+                    .to_string()
+            {
+                continue;
+            }
+            let member: PersonInfo = self.get_member_info(member_id)?;
+            let provider: PersonInfo = self.get_provider_info(provider_id)?;
+            let fee: f64 = self.get_service_fee(service_id)?;
+            let subject = "Provider Report for ".to_owned() + &provider.name;
+            let consul_text = Self::create_provider_consultation_text(
+                &service_date,
+                &current_date_time,
+                &member.name,
+                member_id,
+                service_id,
+                fee,
+            );
+
+            if let Entry::Vacant(e) = reports.entry(provider_id) {
+                let body = Self::create_provider_report_body(&provider);
+                e.insert((provider.email, subject, body, provider.name));
+            }
+            if let Some(values) = reports.get_mut(&provider_id) {
+                values.2.push_str(&consul_text);
+                *values = (
+                    values.0.clone(),
+                    values.1.clone(),
+                    values.2.clone(),
+                    values.3.clone(),
+                );
+            }
+        }
+
+        for (_key, (email, subject, body, name)) in reports {
+            send_provider_report(&email, CHOCAN_EMAIL, &subject, &body, &name)
+                .map_err(Error::Io)?;
+        }
         Ok(())
     }
 
@@ -361,7 +375,7 @@ impl DB {
         member_name: &str,
         member_number: u32,
         service_code: u32,
-        fee: f32,
+        fee: f64,
     ) -> String {
         "----------------------------------------\n".to_string()
             + &format!("Date of service: {}\n", service_date)
@@ -373,6 +387,15 @@ impl DB {
             + &format!("Member number: {}\n", member_number)
             + &format!("Service code: {}\n", service_code)
             + &format!("Fee: {}\n", fee)
+    }
+
+    fn create_provider_report_footer(
+        total_consultations: u32,
+        total_fee: f64,
+    ) -> String {
+        "----------------------------------------\n".to_string()
+            + &format!("Total consultations: {}\n", total_consultations)
+            + &format!("Total fee: {}\n", total_fee)
     }
 
     /// Sends out a manager report to the ChocAn manager.
@@ -766,6 +789,32 @@ impl DB {
             .map_err(Error::Sql)?;
         if let Some(name) = rows.flatten().next() {
             return Ok(name);
+        }
+        Err(Error::Sql(rusqlite::Error::QueryReturnedNoRows))
+    }
+
+    /// Gets the fee corresponding to the specified service code id.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the service to get the fee of.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the fee could not be retrieved.
+    pub fn get_service_fee(&self, id: u32) -> Result<f64, Error> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT fee FROM provider_directory WHERE service_id = ?")
+            .map_err(Error::Sql)?;
+        let rows = stmt
+            .query_map([id], |row| {
+                let fee: f64 = row.get(0)?;
+                Ok(fee)
+            })
+            .map_err(Error::Sql)?;
+        if let Some(fee) = rows.flatten().next() {
+            return Ok(fee);
         }
         Err(Error::Sql(rusqlite::Error::QueryReturnedNoRows))
     }
@@ -1222,7 +1271,39 @@ mod tests {
     }
 
     #[test]
-    fn test_send_provider_reports() {}
+    fn test_send_provider_reports() {
+        remove_test_db();
+        let db = DB::new(TEST_DB_PATH).unwrap();
+        db.add_service(123456, "ServiceName123456", 99.99).unwrap();
+        db.add_member(&create_a_unique_person("MemberName1", 1))
+            .unwrap();
+        db.add_member(&create_a_unique_person("MemberName2", 2))
+            .unwrap();
+        db.add_member(&create_a_unique_person("MemberName3", 3))
+            .unwrap();
+        db.add_member(&create_a_unique_person("MemberName4", 4))
+            .unwrap();
+        db.add_provider(&create_a_unique_person("ProviderName1", 61))
+            .unwrap();
+        db.add_provider(&create_a_unique_person("ProviderName2", 62))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(1, 61))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(2, 61))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(2, 61))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3, 61))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3, 62))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(3, 62))
+            .unwrap();
+        match db.send_provider_reports() {
+            Ok(_) => (),
+            Err(err) => panic!("send_provider_reports() ERROR: {}", err),
+        }
+    }
 
     #[test]
     fn test_send_manager_report() {
