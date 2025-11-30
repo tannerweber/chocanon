@@ -275,68 +275,103 @@ impl DB {
     ///
     /// Will return `Err` if any reports are not sent.
     pub fn send_provider_reports(&self) -> Result<(), Error> {
-        let mut reports = HashMap::new();
-        let mut stmt = self
-            .conn
-            .prepare(
-                "SELECT
-                consultations.service_date,
-                consultations.member_id,
-                consultations.provider_id,
-                consultations.service_code
-                FROM consultations
-                ORDER BY consultations.service_date ASC",
-            )
-            .map_err(Error::Sql)?;
-        let rows = stmt
-            .query_map([], |row| {
-                let service_date: String = row.get(0)?;
-                let member_id: u32 = row.get(1)?;
-                let provider_id: u32 = row.get(2)?;
-                let service_id: u32 = row.get(3)?;
-                Ok((service_date, member_id, provider_id, service_id))
-            })
-            .map_err(Error::Sql)?;
-
-        for (service_date, member_id, provider_id, service_id) in rows.flatten()
-        {
-            if service_date
-                < (Local::now() - Duration::days(REPORT_DATE_RANGE))
-                    .format("%m-%d-%Y")
-                    .to_string()
-            {
-                continue;
-            }
-            let member: PersonInfo = self.get_member_info(member_id)?;
-            let provider: PersonInfo = self.get_provider_info(provider_id)?;
-            let service_name: String = self.get_service_name(service_id)?;
-            let subject = "Member Report for ".to_owned() + &member.name;
-            let consul_text = Self::create_consultation_text(
-                &service_date,
-                &provider.name,
-                &service_name,
-            );
-
-            if let Entry::Vacant(e) = reports.entry(member_id) {
-                let body = Self::create_member_report_body(&member);
-                e.insert((member.email, subject, body, member.name));
-            }
-            if let Some(values) = reports.get_mut(&member_id) {
-                values.2.push_str(&consul_text);
-                *values = (
-                    values.0.clone(),
-                    values.1.clone(),
-                    values.2.clone(),
-                    values.3.clone(),
-                );
-            }
-        }
-
-        for (_key, (email, subject, body, name)) in reports {
-            send_member_report(&email, CHOCAN_EMAIL, &subject, &body, &name)
-                .map_err(Error::Io)?;
-        }
+        // let mut reports = HashMap::new();
+        // let mut stmt = self
+        //     .conn
+        //     .prepare(
+        //         "SELECT
+        //         consultations.service_date,
+        //         consultations.member_id,
+        //         consultations.provider_id,
+        //         consultations.service_code
+        //         FROM consultations
+        //         ORDER BY consultations.service_date ASC",
+        //     )
+        //     .map_err(Error::Sql)?;
+        // let rows = stmt
+        //     .query_map([], |row| {
+        //         let service_date: String = row.get(0)?;
+        //         let member_id: u32 = row.get(1)?;
+        //         let provider_id: u32 = row.get(2)?;
+        //         let service_id: u32 = row.get(3)?;
+        //         Ok((service_date, member_id, provider_id, service_id))
+        //     })
+        //     .map_err(Error::Sql)?;
+        //
+        // for (service_date, member_id, provider_id, service_id) in rows.flatten()
+        // {
+        //     if service_date
+        //         < (Local::now() - Duration::days(REPORT_DATE_RANGE))
+        //             .format("%m-%d-%Y")
+        //             .to_string()
+        //     {
+        //         continue;
+        //     }
+        //     let member: PersonInfo = self.get_member_info(member_id)?;
+        //     let provider: PersonInfo = self.get_provider_info(provider_id)?;
+        //     let service_name: String = self.get_service_name(service_id)?;
+        //     let subject = "Provider Report for ".to_owned() + &provider.name;
+        //     let consul_text = Self::create_provider_consultation_text(
+        //         &service_date,
+        //         &service_date_time,
+        //         &member.name,
+        //         member_id,
+        //         service_id,
+        //         fee,
+        //     );
+        //
+        //     if let Entry::Vacant(e) = reports.entry(member_id) {
+        //         let body = Self::create_provider_report_body(&provider);
+        //         e.insert((member.email, subject, body, member.name));
+        //     }
+        //     if let Some(values) = reports.get_mut(&member_id) {
+        //         values.2.push_str(&consul_text);
+        //         *values = (
+        //             values.0.clone(),
+        //             values.1.clone(),
+        //             values.2.clone(),
+        //             values.3.clone(),
+        //         );
+        //     }
+        // }
+        //
+        // for (_key, (email, subject, body, name)) in reports {
+        //     send_member_report(&email, CHOCAN_EMAIL, &subject, &body, &name)
+        //         .map_err(Error::Io)?;
+        // }
         Ok(())
+    }
+
+    fn create_provider_report_body(provider: &PersonInfo) -> String {
+        format!("Provider name: {}\n", provider.name)
+            + &format!("Provider number: {}\n", provider.id)
+            + &format!(
+                "Provider street address: {}\n",
+                provider.location.address
+            )
+            + &format!("Provider city: {}\n", provider.location.city)
+            + &format!("Provider state: {}\n", provider.location.state)
+            + &format!("Provider zip code: {}\n", provider.location.zipcode)
+    }
+
+    fn create_provider_consultation_text(
+        service_date: &str,
+        service_date_time: &str,
+        member_name: &str,
+        member_number: u32,
+        service_code: u32,
+        fee: f32,
+    ) -> String {
+        "----------------------------------------\n".to_string()
+            + &format!("Date of service: {}\n", service_date)
+            + &format!(
+                "Date and time data were received by the computer: {}\n",
+                service_date_time
+            )
+            + &format!("Member name: {}\n", member_name)
+            + &format!("Member number: {}\n", member_number)
+            + &format!("Service code: {}\n", service_code)
+            + &format!("Fee: {}\n", fee)
     }
 
     /// Sends out a manager report to the ChocAn manager.
