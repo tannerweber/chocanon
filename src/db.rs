@@ -436,7 +436,8 @@ impl DB {
             .prepare(
                 "SELECT
                 service_id,
-                name
+                name,
+                fee
             FROM provider_directory",
             )
             .map_err(Error::Sql)?;
@@ -444,12 +445,16 @@ impl DB {
             .query_map([], |row| {
                 let service_id: u32 = row.get(0)?;
                 let name: String = row.get(1)?;
-                Ok((service_id, name))
+                let fee: f64 = row.get(2)?;
+                Ok((service_id, name, fee))
             })
             .map_err(Error::Sql)?;
         let mut email_body: String = "".to_string();
-        for (service_id, name) in rows.flatten() {
-            email_body.push_str(&format!("{} ID: {}\n", name, service_id));
+        for (service_id, name, fee) in rows.flatten() {
+            email_body.push_str(&format!(
+                "{}, ID: {}, Fee: {}\n",
+                name, service_id, fee
+            ));
         }
         send_provider_directory(
             email,
