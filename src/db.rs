@@ -712,6 +712,7 @@ impl DB {
     ///
     /// * `id` - The id of the service.
     /// * `name` - The name of the service.
+    /// * `fee` - The fee for the service.
     ///
     /// # Failure
     ///
@@ -1245,9 +1246,9 @@ mod tests {
     fn test_send_provider_directory() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
-        db.add_service(111111, "Therapy1", 99.99).unwrap();
-        db.add_service(111112, "Therapy2", 99.99).unwrap();
-        db.add_service(111113, "Therapy3", 99.99).unwrap();
+        db.add_service(111111, "Therapy1", 10.99).unwrap();
+        db.add_service(111112, "Therapy2", 20.99).unwrap();
+        db.add_service(111113, "Therapy3", 30.99).unwrap();
         db.send_provider_directory("providername@pdx.edu").unwrap();
     }
 
