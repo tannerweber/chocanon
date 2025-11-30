@@ -406,6 +406,7 @@ impl DB {
                 })
             })
             .map_err(Error::Sql)?;
+
         let mut report: String = "".to_string();
         for consul in rows.flatten() {
             report.push_str(&format!("{}\n", consul));
@@ -438,7 +439,8 @@ impl DB {
                 service_id,
                 name,
                 fee
-            FROM provider_directory",
+            FROM provider_directory
+            ORDER BY name ASC",
             )
             .map_err(Error::Sql)?;
         let rows = stmt
@@ -449,6 +451,7 @@ impl DB {
                 Ok((service_id, name, fee))
             })
             .map_err(Error::Sql)?;
+
         let mut email_body: String = "".to_string();
         for (service_id, name, fee) in rows.flatten() {
             email_body.push_str(&format!(
@@ -1246,8 +1249,8 @@ mod tests {
     fn test_send_provider_directory() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
-        db.add_service(111111, "Therapy1", 10.99).unwrap();
         db.add_service(111112, "Therapy2", 20.99).unwrap();
+        db.add_service(111111, "Therapy1", 10.99).unwrap();
         db.add_service(111113, "Therapy3", 30.99).unwrap();
         db.send_provider_directory("providername@pdx.edu").unwrap();
     }
