@@ -1510,8 +1510,55 @@ mod tests {
     }
 
     #[test]
-    fn test_get_member_info() {}
+    fn test_get_member_info() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
+        match db.add_member(&create_a_unique_person("PersonName", 123456789)) {
+            Ok(_) => (),
+            Err(err) => panic!("add_member() ERROR: {}", err),
+        }
+
+        match db.get_member_info(123456789) {
+            Ok(info) => {
+                assert_eq!(info.name, "PersonName");
+                assert_eq!(info.id, 123456789);
+            }
+            Err(err) => panic!("get_member_info() ERROR: {}", err),
+        }
+
+        match db.get_member_info(777777777) {
+            Ok(_) => panic!(
+                "Member info should give error when member does not exist"
+            ),
+            Err(_) => (),
+        }
+    }
 
     #[test]
-    fn test_get_provider_info() {}
+    fn test_get_provider_info() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
+        match db.add_provider(&create_a_unique_person("PersonName", 123456789))
+        {
+            Ok(_) => (),
+            Err(err) => panic!("add_provider() ERROR: {}", err),
+        }
+
+        match db.get_provider_info(123456789) {
+            Ok(info) => {
+                assert_eq!(info.name, "PersonName");
+                assert_eq!(info.id, 123456789);
+            }
+            Err(err) => panic!("get_provider_info() ERROR: {}", err),
+        }
+
+        match db.get_provider_info(777777777) {
+            Ok(_) => panic!(
+                "Provider info should give error when member does not exist"
+            ),
+            Err(_) => (),
+        }
+    }
 }
