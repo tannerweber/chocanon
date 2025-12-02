@@ -20,6 +20,7 @@ use chocanon::{mterm, pterm};
 use std::error::Error;
 use std::io::{self, Write};
 
+#[derive(PartialEq, Debug)]
 enum MenuOption {
     Quit,
     ProviderTerminal,
@@ -37,8 +38,30 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         Ok(db) => db,
         Err(err) => panic!("Error: {}", err),
     };
+    loop {
+        print_menu();
+        let option = get_valid_user_input();
+        match option {
+            MenuOption::Quit => {
+                println!("Quitting");
+                break;
+            }
+            MenuOption::ProviderTerminal => {
+                println!("Chose provider terminal");
+                pterm::run(&db);
+            }
+            MenuOption::ManagerTerminal => {
+                println!("Chose manager terminal");
+                mterm::run_man_term(&db);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn print_menu() {
     print!(
-        "---ChocAn Start Menu---
+        "\n---ChocAn Start Menu---
 Enter a number corresponding to the option
 ( 0 ) Quit
 ( 1 ) Provider Terminal
@@ -46,19 +69,6 @@ Enter a number corresponding to the option
 Choice: "
     );
     io::stdout().flush().expect("Failed to flush stdout");
-    let option = get_valid_user_input();
-    match option {
-        MenuOption::Quit => println!("Quitting"),
-        MenuOption::ProviderTerminal => {
-            println!("Chose provider terminal");
-            pterm::run(&db);
-        }
-        MenuOption::ManagerTerminal => {
-            println!("Chose manager terminal");
-            mterm::run_man_term(&db);
-        }
-    }
-    Ok(())
 }
 
 fn get_valid_user_input() -> MenuOption {
