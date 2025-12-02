@@ -17,7 +17,6 @@
 
 use chocanon::db::DB;
 use chocanon::{mterm, pterm};
-use std::error::Error;
 use std::io::{self, Write};
 
 #[derive(PartialEq, Debug)]
@@ -30,10 +29,6 @@ enum MenuOption {
 const DB_PATH: &str = "./chocanon.db3";
 
 fn main() {
-    let _ = run();
-}
-
-pub fn run() -> Result<(), Box<dyn Error>> {
     let db = match DB::new(DB_PATH) {
         Ok(db) => db,
         Err(err) => panic!("Error: {}", err),
@@ -56,7 +51,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
         }
     }
-    Ok(())
 }
 
 fn print_menu() {
