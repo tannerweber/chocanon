@@ -4,11 +4,11 @@ Chocaholics Anonymous simulator for CS 314, Fall 2025, Portland
 State University.
 
 ## Authors
-* Tanner Weber
-* Miles Turoczy
-* Torin Costales
-* Cristian Hernandez
-* Jethro Fernandez
+* Tanner Weber - tannerw@pdx.edu
+* Miles Turoczy - turoczy@pdx.edu
+* Torin Costales - tcostal2@pdx.edu
+* Cristian Hernandez - cristhe@pdx.edu
+* Jethro Fernandez - jethrof@pdx.edu
 
 # Prerequsites
 

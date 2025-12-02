@@ -4,8 +4,8 @@
  * - Tanner Weber, tannerw@pdx.edu
  * - Cristian Hernandez, cristhe@pdx.edu
  * - Jethro Fernandez, jethrof@pdx.edu
- * - Torin Costales, turoczy@pdx.edu
- * - Miles Turoczy, tcostal2@pdx.edu
+ * - Torin Costales, tcostal2@pdx.edu
+ * - Miles Turoczy, turoczy@pdx.edu
  *
  * Portland State University
  * Dates: October 29 to December 5
@@ -35,6 +35,7 @@ const SERVICE_DATE_SIZE: u32 = 10; // MM-DD-YYYY
 const MAX_SERVICE_CODE: u32 = 999999; // 6 Digits
 const MAX_COMMENT_SIZE: u32 = 100;
 //
+/// Reports newer than this many days ago will be sent.
 const REPORT_DATE_RANGE: i64 = 7;
 const CHOCAN_EMAIL: &str = "testing@chocan.com";
 
