@@ -337,7 +337,7 @@ impl DB {
             );
 
             if let Entry::Vacant(e) = reports.entry(provider_id) {
-                let body = Self::create_provider_report_body(&provider);
+                let body = Self::create_provider_report_header(&provider);
                 e.insert((provider.email, subject, body, provider.name));
             }
             if let Some(values) = reports.get_mut(&provider_id) {
@@ -358,7 +358,7 @@ impl DB {
         Ok(())
     }
 
-    fn create_provider_report_body(provider: &PersonInfo) -> String {
+    fn create_provider_report_header(provider: &PersonInfo) -> String {
         format!("Provider name: {}\n", provider.name)
             + &format!("Provider number: {}\n", provider.id)
             + &format!(
