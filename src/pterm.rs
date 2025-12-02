@@ -18,14 +18,26 @@
 use crate::db::{Consultation, DB};
 use std::io::{self, Write};
 
+#[derive(Debug)]
 enum MenuOption {
     AddConsultationRecord,
     GetProviderDirectory,
     Quit,
 }
 
+/// Runs the provider terminal at the commmand line with user input and output.
+///
+/// # Arguments
+///
+/// * `db` - The database to interact with.
 pub fn run(db: &DB) {
     let mut quit: bool = false;
+
+    if !validate_provider(db) {
+        println!("Invalid provider id");
+        return;
+    }
+
     while !quit {
         print_menu_options();
         let option = get_menu_option();
@@ -36,8 +48,12 @@ pub fn run(db: &DB) {
                 quit = true;
             }
             MenuOption::AddConsultationRecord => {
-                // Add code here to get a consultation record first, then pass it into the add_consultation_record function
-
+                if !validate_member(db) {
+                    println!("Invalid Number");
+                    continue;
+                } else {
+                    println!("Validated");
+                }
                 print!("\n---Add Consultation Record---\n");
                 let curr_date = chrono::Local::now()
                     .format("%m-%d-%Y %H:%M:%S")
@@ -97,7 +113,6 @@ pub fn run(db: &DB) {
     }
 }
 
-// Print menu options
 fn print_menu_options() {
     println!("---Provider Terminal---");
     println!("( 0 ) Quit");
@@ -107,7 +122,6 @@ fn print_menu_options() {
     io::stdout().flush().unwrap();
 }
 
-// Prompt user for menu option
 fn get_menu_option() -> MenuOption {
     loop {
         let mut input = String::new();
@@ -117,7 +131,6 @@ fn get_menu_option() -> MenuOption {
             continue;
         }
 
-        // Return menu option corresponding to user's choice
         match input.trim() {
             "0" => return MenuOption::Quit,
             "1" => return MenuOption::AddConsultationRecord,
@@ -137,4 +150,68 @@ fn input(prompt: &str) -> String {
     let mut s = String::new();
     io::stdin().read_line(&mut s).unwrap();
     s.trim().to_string()
+}
+
+fn validate_provider(db: &DB) -> bool {
+    println!("Enter your provider number/id: ");
+    io::stdout().flush().unwrap();
+
+    let mut valid_input = false;
+    let mut number: u32 = 0;
+
+    while !valid_input {
+        let mut input = String::new();
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+        let input = input.trim();
+
+        match input.parse::<u32>() {
+            Ok(n) => {
+                valid_input = true;
+                number = n;
+            }
+            Err(_) => println!("Invalid input. Try again"),
+        }
+    }
+
+    match db.is_valid_provider_id(number) {
+        Ok(is_valid_user) => is_valid_user,
+        Err(err) => {
+            println!("Error validating id: {}", err);
+            false
+        }
+    }
+}
+
+fn validate_member(db: &DB) -> bool {
+    println!("Enter the member number/id: ");
+    io::stdout().flush().unwrap();
+
+    let mut valid_input = false;
+    let mut number: u32 = 0;
+
+    while !valid_input {
+        let mut input = String::new();
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+        let input = input.trim();
+
+        match input.parse::<u32>() {
+            Ok(n) => {
+                valid_input = true;
+                number = n;
+            }
+            Err(_) => println!("Invalid input. Try again"),
+        }
+    }
+
+    match db.is_valid_member_id(number) {
+        Ok(is_valid_user) => is_valid_user,
+        Err(err) => {
+            println!("Error validating id: {}", err);
+            false
+        }
+    }
 }
