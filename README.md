@@ -10,6 +10,12 @@ State University.
 * Cristian Hernandez
 * Jethro Fernandez
 
+# Prerequsites
+
+* rustc
+* cargo
+* make
+
 # Building
 
 The binary can be built with ```make release```.
