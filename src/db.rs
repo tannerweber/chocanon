@@ -336,22 +336,38 @@ impl DB {
                 fee,
             );
 
+            // Create the email if it doesn't exist
             if let Entry::Vacant(e) = reports.entry(provider_id) {
                 let body = Self::create_provider_report_header(&provider);
-                e.insert((provider.email, subject, body, provider.name));
+                e.insert((
+                    provider.email,
+                    subject,
+                    body,
+                    provider.name,
+                    0,
+                    0.0,
+                ));
             }
+            // Append the consultation
             if let Some(values) = reports.get_mut(&provider_id) {
                 values.2.push_str(&consul_text);
+                values.4 += 1;
+                values.5 += fee;
+                // DO I NEED THIS CODE???
                 *values = (
                     values.0.clone(),
                     values.1.clone(),
                     values.2.clone(),
                     values.3.clone(),
+                    values.4.clone(),
+                    values.5.clone(),
                 );
             }
         }
 
-        for (_key, (email, subject, body, name)) in reports {
+        for (_key, (email, subject, mut body, name, consuls, fees)) in reports {
+            let footer = Self::create_provider_report_footer(consuls, fees);
+            body.push_str(&footer);
             send_provider_report(&email, CHOCAN_EMAIL, &subject, &body, &name)
                 .map_err(Error::Io)?;
         }
