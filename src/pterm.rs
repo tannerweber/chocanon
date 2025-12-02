@@ -34,7 +34,10 @@ pub fn run(db: &DB) {
     let mut quit: bool = false;
 
     if !validate_provider(db) {
-        println!("Invalid provider id");
+        println!("Invalid provider id.");
+        println!(
+            "Ensure that the provider has been added from the manager terminal."
+        );
         return;
     }
 
