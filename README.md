@@ -10,7 +10,7 @@ State University.
 * Cristian Hernandez - cristhe@pdx.edu
 * Jethro Fernandez - jethrof@pdx.edu
 
-# Prerequsites
+# Requirements
 
 * rustc
 * cargo
