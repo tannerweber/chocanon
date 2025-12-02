@@ -353,15 +353,6 @@ impl DB {
                 values.2.push_str(&consul_text);
                 values.4 += 1;
                 values.5 += fee;
-                // DO I NEED THIS CODE???
-                *values = (
-                    values.0.clone(),
-                    values.1.clone(),
-                    values.2.clone(),
-                    values.3.clone(),
-                    values.4.clone(),
-                    values.5.clone(),
-                );
             }
         }
 
