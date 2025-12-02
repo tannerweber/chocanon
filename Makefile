@@ -6,6 +6,7 @@ all:
 release:
 	cargo build --release
 
+.PHONY: clean
+
 clean:
-	rm test_*
-	rm -r emails/
+	rm -rf test_* emails/
