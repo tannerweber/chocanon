@@ -450,9 +450,14 @@ impl DB {
             })
             .map_err(Error::Sql)?;
 
+        let mut total_consuls: u64 = 0;
         let mut report: String = "".to_string();
         for consul in rows.flatten() {
+            total_consuls += 1;
             report.push_str(&format!("{}\n", consul));
+        }
+        if total_consuls == 0 {
+            return Err(Error::NoDataFound);
         }
         send_manager_report(
             "manager@pdx.edu",
@@ -1354,7 +1359,19 @@ mod tests {
     }
 
     #[test]
-    fn test_send_manager_report() {
+    fn test_send_manager_report_no_data_error() {
+        remove_test_db();
+        let db = DB::new(TEST_DB_PATH).unwrap();
+        let mut got_error = false;
+        match db.send_manager_report() {
+            Ok(_) => (),
+            Err(_) => got_error = true,
+        }
+        assert!(got_error);
+    }
+
+    #[test]
+    fn test_send_manager_report_success() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
 
