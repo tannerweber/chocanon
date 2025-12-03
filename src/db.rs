@@ -1031,6 +1031,12 @@ impl LocationInfo {
                 MAX_CITY_SIZE, city
             ));
         }
+        if state.chars().count() != STATE_SIZE {
+            return Err(format!(
+                "state size must be equal to {} characters: {}",
+                STATE_SIZE, state
+            ));
+        }
         if zipcode > MAX_ZIPCODE {
             return Err(format!(
                 "zipcode must be less than or equal to {}: {}",
