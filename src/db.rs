@@ -1261,20 +1261,6 @@ mod tests {
     }
 
     #[test]
-    fn test_send_member_reports_with_empty_tables_error() {
-        remove_test_db();
-        let mut got_error = false;
-        let db = DB::new(TEST_DB_PATH).unwrap();
-        db.add_member(&create_a_unique_person("MemberName1", 1))
-            .unwrap();
-        match db.send_member_reports() {
-            Ok(_) => (),
-            Err(_) => got_error = true,
-        }
-        assert!(got_error);
-    }
-
-    #[test]
     fn test_send_member_reports_with_populated_database_success() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
@@ -1310,13 +1296,13 @@ mod tests {
     }
 
     #[test]
-    fn test_send_provider_reports_with_empty_tables_error() {
+    fn test_send_member_reports_with_empty_tables_error() {
         remove_test_db();
         let mut got_error = false;
         let db = DB::new(TEST_DB_PATH).unwrap();
-        db.add_provider(&create_a_unique_person("ProviderName1", 61))
+        db.add_member(&create_a_unique_person("MemberName1", 1))
             .unwrap();
-        match db.send_provider_reports() {
+        match db.send_member_reports() {
             Ok(_) => (),
             Err(_) => got_error = true,
         }
@@ -1359,11 +1345,13 @@ mod tests {
     }
 
     #[test]
-    fn test_send_manager_report_no_data_error() {
+    fn test_send_provider_reports_with_empty_tables_error() {
         remove_test_db();
-        let db = DB::new(TEST_DB_PATH).unwrap();
         let mut got_error = false;
-        match db.send_manager_report() {
+        let db = DB::new(TEST_DB_PATH).unwrap();
+        db.add_provider(&create_a_unique_person("ProviderName1", 61))
+            .unwrap();
+        match db.send_provider_reports() {
             Ok(_) => (),
             Err(_) => got_error = true,
         }
@@ -1392,6 +1380,18 @@ mod tests {
     }
 
     #[test]
+    fn test_send_manager_report_no_data_error() {
+        remove_test_db();
+        let db = DB::new(TEST_DB_PATH).unwrap();
+        let mut got_error = false;
+        match db.send_manager_report() {
+            Ok(_) => (),
+            Err(_) => got_error = true,
+        }
+        assert!(got_error);
+    }
+
+    #[test]
     fn test_send_provider_directory() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
@@ -1399,14 +1399,6 @@ mod tests {
         db.add_service(111111, "Therapy1", 10.99).unwrap();
         db.add_service(111113, "Therapy3", 30.99).unwrap();
         db.send_provider_directory("providername@pdx.edu").unwrap();
-    }
-
-    #[test]
-    fn test_is_valid_member_doesnt_exist() {
-        remove_test_db();
-        let db: DB = DB::new(TEST_DB_PATH).unwrap();
-        let result = db.is_valid_member_id(123).unwrap();
-        assert!(!result)
     }
 
     #[test]
@@ -1455,10 +1447,10 @@ mod tests {
     }
 
     #[test]
-    fn test_is_valid_provider_doesnt_exist() {
+    fn test_is_valid_member_doesnt_exist() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
-        let result = db.is_valid_provider_id(123).unwrap();
+        let result = db.is_valid_member_id(123).unwrap();
         assert!(!result)
     }
 
@@ -1508,10 +1500,10 @@ mod tests {
     }
 
     #[test]
-    fn test_is_valid_service_id_doesnt_exist() {
+    fn test_is_valid_provider_doesnt_exist() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
-        let result = db.is_valid_service_id(123).unwrap();
+        let result = db.is_valid_provider_id(123).unwrap();
         assert!(!result)
     }
 
@@ -1555,6 +1547,14 @@ mod tests {
             }
             Err(_) => (),
         }
+    }
+
+    #[test]
+    fn test_is_valid_service_id_doesnt_exist() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        let result = db.is_valid_service_id(123).unwrap();
+        assert!(!result)
     }
 
     #[test]
@@ -1622,19 +1622,6 @@ mod tests {
     }
 
     #[test]
-    fn test_remove_member_doesnt_exist_error() {
-        remove_test_db();
-        let db: DB = DB::new(TEST_DB_PATH).unwrap();
-
-        match db.remove_member(123456789) {
-            Ok(_) => {
-                panic!("Member should not exist and not be able to be removed.")
-            }
-            Err(_) => (),
-        }
-    }
-
-    #[test]
     fn test_remove_member_exists_success() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
@@ -1648,15 +1635,13 @@ mod tests {
     }
 
     #[test]
-    fn test_remove_provider_doesnt_exist_error() {
+    fn test_remove_member_doesnt_exist_error() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
-        match db.remove_provider(123456789) {
+        match db.remove_member(123456789) {
             Ok(_) => {
-                panic!(
-                    "Provider should not exist and not be able to be removed."
-                )
+                panic!("Member should not exist and not be able to be removed.")
             }
             Err(_) => (),
         }
@@ -1672,6 +1657,21 @@ mod tests {
         match db.remove_provider(123456789) {
             Ok(_) => (),
             Err(err) => panic!("remove_provider() ERROR: {}", err),
+        }
+    }
+
+    #[test]
+    fn test_remove_provider_doesnt_exist_error() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
+        match db.remove_provider(123456789) {
+            Ok(_) => {
+                panic!(
+                    "Provider should not exist and not be able to be removed."
+                )
+            }
+            Err(_) => (),
         }
     }
 
@@ -1744,7 +1744,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_member_info() {
+    fn test_get_member_info_success() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
@@ -1770,7 +1770,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_provider_info() {
+    fn test_get_provider_info_success() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
