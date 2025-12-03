@@ -500,12 +500,17 @@ impl DB {
             })
             .map_err(Error::Sql)?;
 
+        let mut total_services = 0;
         let mut email_body: String = "".to_string();
         for (service_id, name, fee) in rows.flatten() {
+            total_services += 1;
             email_body.push_str(&format!(
                 "{}, ID: {}, Fee: {}\n",
                 name, service_id, fee
             ));
+        }
+        if total_services == 0 {
+            return Err(Error::NoDataFound);
         }
         send_provider_directory(
             email,
@@ -1233,7 +1238,7 @@ mod tests {
     }
 
     #[test]
-    fn test_consultation_constructor() {
+    fn test_consultation_constructor_success() {
         match Consultation::new(
             "01-13-2025:07:45:39",
             "01-13-2025",
@@ -1392,13 +1397,23 @@ mod tests {
     }
 
     #[test]
-    fn test_send_provider_directory() {
+    fn test_send_provider_directory_success() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
         db.add_service(111112, "Therapy2", 20.99).unwrap();
         db.add_service(111111, "Therapy1", 10.99).unwrap();
         db.add_service(111113, "Therapy3", 30.99).unwrap();
         db.send_provider_directory("providername@pdx.edu").unwrap();
+    }
+
+    #[test]
+    fn test_send_provider_directory_no_data_error() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        match db.send_provider_directory("providername@pdx.edu") {
+            Ok(_) => panic!("Expected error for no data in provider directory"),
+            Err(_) => (),
+        }
     }
 
     #[test]
