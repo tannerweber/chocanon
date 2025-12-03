@@ -1402,7 +1402,15 @@ mod tests {
     }
 
     #[test]
-    fn test_is_valid_member_id() {
+    fn test_is_valid_member_doesnt_exist() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        let result = db.is_valid_member_id(123).unwrap();
+        assert!(!result)
+    }
+
+    #[test]
+    fn test_is_valid_member_id_success() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
@@ -1447,7 +1455,15 @@ mod tests {
     }
 
     #[test]
-    fn test_is_valid_provider_id() {
+    fn test_is_valid_provider_doesnt_exist() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        let result = db.is_valid_provider_id(123).unwrap();
+        assert!(!result)
+    }
+
+    #[test]
+    fn test_is_valid_provider_id_success() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
@@ -1492,7 +1508,15 @@ mod tests {
     }
 
     #[test]
-    fn test_is_valid_service_id() {
+    fn test_is_valid_service_id_doesnt_exist() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        let result = db.is_valid_service_id(123).unwrap();
+        assert!(!result)
+    }
+
+    #[test]
+    fn test_is_valid_service_id_success() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
