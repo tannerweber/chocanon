@@ -1558,7 +1558,21 @@ mod tests {
     }
 
     #[test]
-    fn test_add_member() {
+    fn test_add_member_doesnt_exist_success() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        let person: PersonInfo = get_a_person();
+
+        match db.add_member(&person) {
+            Ok(_) => (),
+            Err(err) => {
+                panic!("add_member() ERROR: {}", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_add_member_already_exists_err() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
         let person: PersonInfo = get_a_person();
@@ -1576,7 +1590,21 @@ mod tests {
     }
 
     #[test]
-    fn test_add_provider() {
+    fn test_add_provider_doesnt_exist_success() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+        let person: PersonInfo = get_a_person();
+
+        match db.add_provider(&person) {
+            Ok(_) => (),
+            Err(err) => {
+                panic!("add_provider() ERROR: {}", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_add_provider_already_exists_err() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
         let person: PersonInfo = get_a_person();
