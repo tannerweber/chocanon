@@ -207,6 +207,7 @@ impl DB {
                 Ok((service_date, member_id, provider_id, service_id))
             })
             .map_err(Error::Sql)?;
+
         let mut num_emails: u64 = 0;
         let mut reports = HashMap::new();
         for (service_date, member_id, provider_id, service_id) in rows.flatten()
@@ -313,6 +314,7 @@ impl DB {
             })
             .map_err(Error::Sql)?;
 
+        let mut num_emails: u64 = 0;
         let mut reports = HashMap::new();
         for (
             service_date,
@@ -363,10 +365,14 @@ impl DB {
         }
 
         for (_key, (email, subject, mut body, name, consuls, fees)) in reports {
+            num_emails += 1;
             let footer = Self::create_provider_report_footer(consuls, fees);
             body.push_str(&footer);
             send_provider_report(&email, CHOCAN_EMAIL, &subject, &body, &name)
                 .map_err(Error::Io)?;
+        }
+        if num_emails == 0 {
+            return Err(Error::NoDataFound);
         }
         Ok(())
     }
@@ -1299,7 +1305,21 @@ mod tests {
     }
 
     #[test]
-    fn test_send_provider_reports() {
+    fn test_send_provider_reports_with_empty_tables_error() {
+        remove_test_db();
+        let mut got_error = false;
+        let db = DB::new(TEST_DB_PATH).unwrap();
+        db.add_provider(&create_a_unique_person("ProviderName1", 61))
+            .unwrap();
+        match db.send_provider_reports() {
+            Ok(_) => (),
+            Err(_) => got_error = true,
+        }
+        assert!(got_error);
+    }
+
+    #[test]
+    fn test_send_provider_reports_with_populated_database_success() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
         db.add_service(123456, "ServiceName123456", 99.99).unwrap();
