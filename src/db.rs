@@ -1752,7 +1752,6 @@ mod tests {
             Ok(_) => (),
             Err(err) => panic!("add_member() ERROR: {}", err),
         }
-
         match db.get_member_info(123456789) {
             Ok(info) => {
                 assert_eq!(info.name, "PersonName");
@@ -1760,6 +1759,12 @@ mod tests {
             }
             Err(err) => panic!("get_member_info() ERROR: {}", err),
         }
+    }
+
+    #[test]
+    fn test_get_member_info_doesnt_exist_error() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
         match db.get_member_info(777777777) {
             Ok(_) => panic!(
@@ -1779,7 +1784,6 @@ mod tests {
             Ok(_) => (),
             Err(err) => panic!("add_provider() ERROR: {}", err),
         }
-
         match db.get_provider_info(123456789) {
             Ok(info) => {
                 assert_eq!(info.name, "PersonName");
@@ -1787,6 +1791,12 @@ mod tests {
             }
             Err(err) => panic!("get_provider_info() ERROR: {}", err),
         }
+    }
+
+    #[test]
+    fn test_get_provider_info_doesnt_exist_error() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
         match db.get_provider_info(777777777) {
             Ok(_) => panic!(
