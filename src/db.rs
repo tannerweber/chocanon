@@ -45,6 +45,7 @@ pub enum Error {
     Sql(rusqlite::Error),
     Regex(regex::Error),
     EmptyInput,
+    NoDataFound,
 }
 
 impl std::fmt::Display for Error {
@@ -54,6 +55,7 @@ impl std::fmt::Display for Error {
             Error::Sql(ref err) => write!(f, "Rusqlite error: {}", err),
             Error::Regex(ref err) => write!(f, "Regex error: {}", err),
             Error::EmptyInput => write!(f, "Empty input error"),
+            Error::NoDataFound => write!(f, "No data used error"),
         }
     }
 }
@@ -205,7 +207,7 @@ impl DB {
                 Ok((service_date, member_id, provider_id, service_id))
             })
             .map_err(Error::Sql)?;
-
+        let mut num_emails: u64 = 0;
         let mut reports = HashMap::new();
         for (service_date, member_id, provider_id, service_id) in rows.flatten()
         {
@@ -242,8 +244,12 @@ impl DB {
         }
 
         for (_key, (email, subject, body, name)) in reports {
+            num_emails += 1;
             send_member_report(&email, CHOCAN_EMAIL, &subject, &body, &name)
                 .map_err(Error::Io)?;
+        }
+        if num_emails == 0 {
+            return Err(Error::NoDataFound);
         }
         Ok(())
     }
@@ -1244,7 +1250,21 @@ mod tests {
     }
 
     #[test]
-    fn test_send_member_reports() {
+    fn test_send_member_reports_with_empty_tables_error() {
+        remove_test_db();
+        let mut got_error = false;
+        let db = DB::new(TEST_DB_PATH).unwrap();
+        db.add_member(&create_a_unique_person("MemberName1", 1))
+            .unwrap();
+        match db.send_member_reports() {
+            Ok(_) => (),
+            Err(_) => got_error = true,
+        }
+        assert!(got_error);
+    }
+
+    #[test]
+    fn test_send_member_reports_with_populated_database_success() {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
         db.add_service(123456, "ServiceName123456", 99.99).unwrap();
