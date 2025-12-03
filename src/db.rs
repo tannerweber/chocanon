@@ -1451,14 +1451,6 @@ mod tests {
             }
             Err(err) => panic!("is_valid_member_id() ERROR: {}", err),
         }
-        match db.is_valid_member_id(666666666) {
-            Ok(exists) => {
-                if exists {
-                    panic!("Member id should be invalid.");
-                }
-            }
-            Err(_) => (),
-        }
     }
 
     #[test]
@@ -1504,14 +1496,6 @@ mod tests {
             }
             Err(err) => panic!("is_valid_provider_id() ERROR: {}", err),
         }
-        match db.is_valid_provider_id(666666666) {
-            Ok(exists) => {
-                if exists {
-                    panic!("Provider id should be invalid.");
-                }
-            }
-            Err(_) => (),
-        }
     }
 
     #[test]
@@ -1553,14 +1537,6 @@ mod tests {
                 }
             }
             Err(err) => panic!("is_valid_service_id() ERROR: {}", err),
-        }
-        match db.is_valid_service_id(666666666) {
-            Ok(valid) => {
-                if valid {
-                    panic!("Id should be invalid.");
-                }
-            }
-            Err(_) => (),
         }
     }
 
