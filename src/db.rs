@@ -1721,18 +1721,25 @@ mod tests {
     }
 
     #[test]
-    fn test_get_service_name() {
+    fn test_get_service_name_exists_success() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
+        db.add_service(123456, "Service1", 99.99).unwrap();
+        let name = db.get_service_name(123456).unwrap();
+        if name != "Service1" {
+            panic!("Name should match for retrieved name.");
+        }
+    }
+
+    #[test]
+    fn test_get_service_name_doesnt_exist_error() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
         match db.get_service_name(123456) {
             Ok(_) => panic!("Error expected on empty database"),
             Err(_) => (),
-        }
-        db.add_service(123456, "Service1", 99.99).unwrap();
-        let name = db.get_service_name(123456).unwrap();
-        if name != "Service1" {
-            panic!("Name should match for retrieved name.");
         }
     }
 
