@@ -1622,7 +1622,7 @@ mod tests {
     }
 
     #[test]
-    fn test_remove_member() {
+    fn test_remove_member_doesnt_exist_error() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
@@ -1632,6 +1632,13 @@ mod tests {
             }
             Err(_) => (),
         }
+    }
+
+    #[test]
+    fn test_remove_member_exists_success() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
         db.add_member(&create_a_unique_person("MemberName", 123456789))
             .unwrap();
         match db.remove_member(123456789) {
@@ -1641,7 +1648,7 @@ mod tests {
     }
 
     #[test]
-    fn test_remove_provider() {
+    fn test_remove_provider_doesnt_exist_error() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
@@ -1653,6 +1660,13 @@ mod tests {
             }
             Err(_) => (),
         }
+    }
+
+    #[test]
+    fn test_remove_provider_exists_success() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
         db.add_provider(&create_a_unique_person("ProviderName", 123456789))
             .unwrap();
         match db.remove_provider(123456789) {
