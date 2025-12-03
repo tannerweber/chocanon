@@ -1690,7 +1690,15 @@ mod tests {
     }
 
     #[test]
-    fn test_add_service() {
+    fn test_add_service_doesnt_exist_success() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
+        db.add_service(123456, "Service1", 99.99).unwrap();
+    }
+
+    #[test]
+    fn test_add_service_already_exists_error() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
 
@@ -1699,6 +1707,13 @@ mod tests {
             Ok(_) => panic!("Error expected for duplicate ID."),
             Err(_) => (),
         }
+    }
+
+    #[test]
+    fn test_add_service_empty_name_error() {
+        remove_test_db();
+        let db: DB = DB::new(TEST_DB_PATH).unwrap();
+
         match db.add_service(222222, "", 99.99) {
             Ok(_) => panic!("Error expected for empty name."),
             Err(_) => (),
