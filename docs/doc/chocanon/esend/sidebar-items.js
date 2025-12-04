@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["send_manager_report","send_member_report","send_provider_directory","send_provider_report"]};

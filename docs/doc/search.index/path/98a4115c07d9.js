@@ -1,0 +1,1 @@
+rd_("f[1,\"\"]Ba[5,\"chocanon::db\",\"chocanon::db\"]n[2,\"chocanon\"]22f[0,\"\"]3333Ba[6,\"chocanon::db\",\"chocanon::db\"]222Ak[8,\"core::fmt\",\"core::fmt\"]Ba[6,\"core::result\",\"core::result\"]Be[8,\"std::io::error\",\"std::io::error\"]Bc[5,\"alloc::string\",\"alloc::string\"]Ak[5,\"core::any\",\"core::any\"]9f[3,\"\"]Ak[5,\"core::fmt\",\"core::fmt\"];:::")

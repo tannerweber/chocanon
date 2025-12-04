@@ -6,6 +6,9 @@ all:
 release:
 	cargo build --release
 
+docs:
+	cargo doc --no-deps --target-dir docs
+
 .PHONY: clean
 
 clean:
