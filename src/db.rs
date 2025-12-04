@@ -235,12 +235,6 @@ impl DB {
             }
             if let Some(values) = reports.get_mut(&member_id) {
                 values.2.push_str(&consul_text);
-                *values = (
-                    values.0.clone(),
-                    values.1.clone(),
-                    values.2.clone(),
-                    values.3.clone(),
-                );
             }
         }
 
