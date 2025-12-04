@@ -1,3 +1,18 @@
+/* File: integration_test.rs
+ *
+ * Authors:
+ * - Tanner Weber, tannerw@pdx.edu
+ * - Cristian Hernandez, cristhe@pdx.edu
+ * - Jethro Fernandez, jethrof@pdx.edu
+ * - Torin Costales, tcostal2@pdx.edu
+ * - Miles Turoczy, turoczy@pdx.edu
+ *
+ * Portland State University
+ * Dates: October 29 to December 5
+ * Course: CS 314, Fall 2025
+ * Instructor: Christopher Gilmore
+ */
+
 use chocanon::esend::{
     send_manager_report, send_member_report, send_provider_report,
 };
