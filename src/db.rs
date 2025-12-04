@@ -55,7 +55,7 @@ impl std::fmt::Display for Error {
             Error::Sql(ref err) => write!(f, "Rusqlite error: {}", err),
             Error::Regex(ref err) => write!(f, "Regex error: {}", err),
             Error::EmptyInput => write!(f, "Empty input error"),
-            Error::NoDataFound => write!(f, "No data used error"),
+            Error::NoDataFound => write!(f, "No data found error"),
         }
     }
 }
@@ -428,46 +428,93 @@ impl DB {
             .conn
             .prepare(
                 "SELECT
-                current_date_time,
                 service_date,
-                member_id,
                 provider_id,
-                service_code,
-                comments
-            FROM consultations",
+                service_code
+            FROM consultations
+            ORDER BY consultations.provider_id ASC",
             )
             .map_err(Error::Sql)?;
         let rows = stmt
             .query_map([], |row| {
-                Ok(Consultation {
-                    curr_date: row.get(0)?,
-                    service_date: row.get(1)?,
-                    provider_id: row.get(2)?,
-                    member_id: row.get(3)?,
-                    service_code: row.get(4)?,
-                    comments: row.get(5)?,
-                })
+                let service_date: String = row.get(0)?;
+                let provider_id: u32 = row.get(1)?;
+                let service_code: u32 = row.get(2)?;
+                Ok((service_date, provider_id, service_code))
             })
             .map_err(Error::Sql)?;
 
-        let mut total_consuls: u64 = 0;
-        let mut report: String = "".to_string();
-        for consul in rows.flatten() {
+        let mut total_consuls: u32 = 0;
+        let mut total_providers: u32 = 0;
+        let mut total_fees: f64 = 0.0;
+        let mut providers = HashMap::new();
+        for (service_date, provider_id, service_code) in rows.flatten() {
+            if service_date
+                < (Local::now() - Duration::days(REPORT_DATE_RANGE))
+                    .format("%m-%d-%Y")
+                    .to_string()
+            {
+                continue;
+            }
+            let curr_fee = self.get_service_fee(service_code)?;
+            if let Entry::Vacant(e) = providers.entry(provider_id) {
+                e.insert((0, 0.0));
+            }
+            if let Some(values) = providers.get_mut(&provider_id) {
+                values.0 += 1;
+                values.1 += curr_fee;
+            }
             total_consuls += 1;
-            report.push_str(&format!("{}\n", consul));
         }
         if total_consuls == 0 {
             return Err(Error::NoDataFound);
         }
+        let mut report_body: String = "".to_string();
+        for (key, (provider_consuls, provider_fee)) in providers {
+            total_providers += 1;
+            total_fees += provider_fee;
+            report_body.push_str(&Self::create_manager_report_section(
+                key,
+                provider_consuls,
+                provider_fee,
+            ));
+        }
+        report_body.push_str(&Self::create_manager_report_footer(
+            total_providers,
+            total_consuls,
+            total_fees,
+        ));
         send_manager_report(
             "manager@pdx.edu",
             CHOCAN_EMAIL,
             "Manager report",
-            &report,
+            &report_body,
             "ManagerName",
         )
         .map_err(Error::Io)?;
         Ok(())
+    }
+
+    fn create_manager_report_section(
+        provider_id: u32,
+        consultations: u32,
+        fees: f64,
+    ) -> String {
+        "- ".to_string()
+            + &format!("ID: {}, ", provider_id)
+            + &format!("Consultations: {}, ", consultations)
+            + &format!("Fees: {}\n", fees)
+    }
+
+    fn create_manager_report_footer(
+        total_providers: u32,
+        total_consultations: u32,
+        total_fees: f64,
+    ) -> String {
+        "----------------------------------------\n".to_string()
+            + &format!("Total providers: {}\n", total_providers)
+            + &format!("Total consultations: {}\n", total_consultations)
+            + &format!("Total fees: {}\n", total_fees)
     }
 
     /// Sends out a the provider directory to the specified email.
@@ -1374,15 +1421,18 @@ mod tests {
         remove_test_db();
         let db = DB::new(TEST_DB_PATH).unwrap();
 
+        db.add_service(123456, "ServiceName1", 10.99).unwrap();
         db.add_consultation_record(&create_a_unique_consultation(1, 1))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(1, 2))
             .unwrap();
         db.add_consultation_record(&create_a_unique_consultation(2, 2))
             .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(1, 3))
+            .unwrap();
+        db.add_consultation_record(&create_a_unique_consultation(2, 3))
+            .unwrap();
         db.add_consultation_record(&create_a_unique_consultation(3, 3))
-            .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(4, 4))
-            .unwrap();
-        db.add_consultation_record(&create_a_unique_consultation(5, 5))
             .unwrap();
         match db.send_manager_report() {
             Ok(_) => (),
@@ -1406,9 +1456,9 @@ mod tests {
     fn test_send_provider_directory_success() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
-        db.add_service(111112, "Therapy2", 20.99).unwrap();
-        db.add_service(111111, "Therapy1", 10.99).unwrap();
-        db.add_service(111113, "Therapy3", 30.99).unwrap();
+        db.add_service(111112, "ServiceName2", 20.99).unwrap();
+        db.add_service(111111, "ServiceName1", 10.99).unwrap();
+        db.add_service(111113, "ServiceName3", 30.99).unwrap();
         db.send_provider_directory("providername@pdx.edu").unwrap();
     }
 
