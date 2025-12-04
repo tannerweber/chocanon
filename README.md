@@ -36,3 +36,7 @@ The emails are outputted in the emails directory.
 # 🧪 Testing
 
 The default make target, ```all```, runs testing, linting, and formatting.
+
+# 📖 Documentation
+
+[Webpage](https://tannerweber.github.io/chocanon/doc/chocanon/index.html)
