@@ -1,4 +1,4 @@
-# ChocAn
+# ChocAn 🍫
 
 Chocaholics Anonymous simulator for CS 314, Fall 2025, Portland
 State University.
@@ -16,23 +16,23 @@ Reports can be sent as files.
 * Cristian Hernandez - cristhe@pdx.edu
 * Jethro Fernandez - jethrof@pdx.edu
 
-# Requirements
+# 💡 Requirements
 
 * rustc
 * cargo
 * make
 
-# Building
+# ⚒️ Building
 
 The binary can be built with ```make release```.
 We've mainly tested on GNU/Linux x86_64.
 
-# Running
+# 🚀 Running
 
 The release binary can be run with ```cargo run --release```.
 The emails are outputted in the emails directory.
 ```make clean``` can be run to remove the directory.
 
-# Testing
+# 🧪 Testing
 
 The default make target, ```all```, runs testing, linting, and formatting.
