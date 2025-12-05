@@ -74,13 +74,13 @@ fn read_choice() -> String {
 //param DB - database to add the member too
 fn add_person_ui(db: &DB) {
     println!("----Add New Person----");
-    let name = read_line("Name:");
-    let id_str = read_line("9 digit ID:");
-    let address = read_line("Street address:");
-    let city = read_line("City name:");
-    let state = read_line("State (2 letters):");
-    let zip_str = read_line("5 digit zip:");
-    let email = read_line("Email:");
+    let name = read_line("Name: ");
+    let id_str = read_line("9 digit ID: ");
+    let address = read_line("Street address: ");
+    let city = read_line("City name: ");
+    let state = read_line("State (2 letters): ");
+    let zip_str = read_line("5 digit zip: ");
+    let email = read_line("Email: ");
 
     let id: u32 = match id_str.parse() {
         Ok(v) => v,
