@@ -138,16 +138,30 @@ fn populate_database(db: &DB) {
     }
 
     let _ = db.add_service(123456, "ServiceName123456", 99.99);
+    let _ = db.add_service(1, "ServiceName1", 1.99);
+    let _ = db.add_service(2, "ServiceName2", 2.99);
+    let _ = db.add_service(3, "ServiceName3", 3.99);
+    let _ = db.add_service(4, "ServiceName4", 4.99);
+    let _ = db.add_service(5, "ServiceName5", 5.99);
     let _ = db.add_member(&create_a_unique_person("MemberName1", 1));
     let _ = db.add_member(&create_a_unique_person("MemberName2", 2));
     let _ = db.add_member(&create_a_unique_person("MemberName3", 3));
     let _ = db.add_member(&create_a_unique_person("MemberName4", 4));
     let _ = db.add_provider(&create_a_unique_person("ProviderName1", 1));
     let _ = db.add_provider(&create_a_unique_person("ProviderName2", 2));
+    let _ = db.add_provider(&create_a_unique_person("ProviderName3", 3));
+    let _ = db.add_provider(&create_a_unique_person("ProviderName4", 4));
+    let _ = db.add_provider(&create_a_unique_person("ProviderName5", 5));
     let _ = db.add_consultation_record(&create_a_unique_consultation(1, 1));
     let _ = db.add_consultation_record(&create_a_unique_consultation(2, 1));
     let _ = db.add_consultation_record(&create_a_unique_consultation(2, 1));
     let _ = db.add_consultation_record(&create_a_unique_consultation(3, 1));
     let _ = db.add_consultation_record(&create_a_unique_consultation(3, 1));
     let _ = db.add_consultation_record(&create_a_unique_consultation(3, 1));
+    let _ = db.add_consultation_record(&create_a_unique_consultation(1, 2));
+    let _ = db.add_consultation_record(&create_a_unique_consultation(2, 2));
+    let _ = db.add_consultation_record(&create_a_unique_consultation(2, 2));
+    let _ = db.add_consultation_record(&create_a_unique_consultation(3, 2));
+    let _ = db.add_consultation_record(&create_a_unique_consultation(3, 2));
+    let _ = db.add_consultation_record(&create_a_unique_consultation(3, 2));
 }
