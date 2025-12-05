@@ -75,8 +75,7 @@ pub fn run(db: &DB) {
                 let provider_id: u32 =
                     input("Provider ID: ").parse().unwrap_or(0);
                 let member_id: u32 = input("Member ID: ").parse().unwrap();
-                let service_code: u32 =
-                    input("Service code: ").parse().unwrap();
+                let service_code: u32 = get_service_code(db);
                 let comments = input("Comments: ");
 
                 let consul = match Consultation::new(
@@ -229,4 +228,31 @@ fn validate_member(db: &DB) -> bool {
             false
         }
     }
+}
+
+fn get_service_code(db: &DB) -> u32 {
+    let id: u32;
+    loop {
+        let service_code: u32 = input("Service code: ").parse().unwrap();
+        match db.is_valid_service_id(service_code) {
+            Ok(valid) => {
+                if valid {
+                    match db.get_service_name(service_code) {
+                        Ok(name) => {
+                            println!("Service Name: {}", name);
+                            if input("Is the name correct (y/n): ") == "y" {
+                                id = service_code;
+                                break;
+                            }
+                        }
+                        Err(err) => {
+                            println!("Error for getting service code: {}", err)
+                        }
+                    }
+                }
+            }
+            Err(err) => println!("Error for verify service code: {}", err),
+        }
+    }
+    id
 }
