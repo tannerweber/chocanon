@@ -52,7 +52,7 @@ pub fn run(db: &DB) {
                 quit = true;
             }
             MenuOption::ValidateMember => {
-                if validate_member(db) {
+                if validate_member(db) > 0 {
                     println!("Validated");
                     continue;
                 } else {
@@ -61,7 +61,8 @@ pub fn run(db: &DB) {
                 }
             }
             MenuOption::AddConsultationRecord => {
-                if !validate_member(db) {
+                let member_id = validate_member(db);
+                if member_id < 0 {
                     println!("Invalid Number");
                     continue;
                 } else {
@@ -74,7 +75,6 @@ pub fn run(db: &DB) {
                 let service_date = input("Service date (MM-DD-YYYY): ");
                 let provider_id: u32 =
                     input("Provider ID: ").parse().unwrap_or(0);
-                let member_id: u32 = input("Member ID: ").parse().unwrap();
                 let service_code: u32 = get_service_code(db);
                 let comments = input("Comments: ");
 
@@ -82,7 +82,7 @@ pub fn run(db: &DB) {
                     curr_date.as_str(),
                     service_date.as_str(),
                     provider_id,
-                    member_id,
+                    member_id.cast_unsigned(),
                     service_code,
                     comments.as_str(),
                 ) {
@@ -198,12 +198,25 @@ fn validate_provider(db: &DB) -> bool {
     }
 }
 
-fn validate_member(db: &DB) -> bool {
+/// Obtains and checks if the member id is valid.
+///
+/// # Arguments
+///
+/// * `db` - The database to check the id validity inside of.
+///
+/// # Success
+///
+/// Will return the valid id.
+///
+/// # Failure
+///
+/// Will return a negative value.
+fn validate_member(db: &DB) -> i32 {
     println!("Enter the member number/id: ");
     io::stdout().flush().unwrap();
 
     let mut valid_input = false;
-    let mut number: u32 = 0;
+    let mut number: i32 = -1;
 
     while !valid_input {
         let mut input = String::new();
@@ -215,17 +228,23 @@ fn validate_member(db: &DB) -> bool {
         match input.parse::<u32>() {
             Ok(n) => {
                 valid_input = true;
-                number = n;
+                number = n.cast_signed();
             }
             Err(_) => println!("Invalid input. Try again"),
         }
     }
 
-    match db.is_valid_member_id(number) {
-        Ok(is_valid_user) => is_valid_user,
+    match db.is_valid_member_id(number.cast_unsigned()) {
+        Ok(valid) => {
+            if valid {
+                number
+            } else {
+                -1
+            }
+        }
         Err(err) => {
             println!("Error validating id: {}", err);
-            false
+            -1
         }
     }
 }
