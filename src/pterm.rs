@@ -104,16 +104,9 @@ pub fn run(db: &DB) {
             }
             MenuOption::GetProviderDirectory => {
                 println!();
-                print!("Please enter your email address: ");
-                io::stdout().flush().unwrap();
+                let id: u32 = input("Please enter your id: ").parse().unwrap();
 
-                let mut email = String::new();
-                io::stdin()
-                    .read_line(&mut email)
-                    .expect("Failed to read input");
-
-                let email = email.trim();
-                match db.send_provider_directory(email) {
+                match db.send_provider_directory(id) {
                     Ok(_) => println!("Retrieving Provider Directory."),
                     Err(e) => {
                         println!("Failed to send Provider Directory: {}", e)

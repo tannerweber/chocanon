@@ -520,7 +520,7 @@ impl DB {
     /// # Failure
     ///
     /// Will return `Err` if not sent.
-    pub fn send_provider_directory(&self, email: &str) -> Result<(), Error> {
+    pub fn send_provider_directory(&self, id: u32) -> Result<(), Error> {
         let mut stmt = self
             .conn
             .prepare(
@@ -553,12 +553,13 @@ impl DB {
         if total_services == 0 {
             return Err(Error::NoDataFound);
         }
+        let provider = self.get_provider_info(id)?;
         send_provider_directory(
-            email,
+            &provider.email,
             CHOCAN_EMAIL,
             "Provider Directory",
             &email_body,
-            "ProviderName",
+            &provider.name,
         )
         .map_err(Error::Io)?;
         Ok(())
@@ -1453,14 +1454,18 @@ mod tests {
         db.add_service(111112, "ServiceName2", 20.99).unwrap();
         db.add_service(111111, "ServiceName1", 10.99).unwrap();
         db.add_service(111113, "ServiceName3", 30.99).unwrap();
-        db.send_provider_directory("providername@pdx.edu").unwrap();
+        db.add_provider(&create_a_unique_person("ProviderName1", 1))
+            .unwrap();
+        db.send_provider_directory(1).unwrap();
     }
 
     #[test]
     fn test_send_provider_directory_no_data_error() {
         remove_test_db();
         let db: DB = DB::new(TEST_DB_PATH).unwrap();
-        match db.send_provider_directory("providername@pdx.edu") {
+        db.add_provider(&create_a_unique_person("ProviderName1", 1))
+            .unwrap();
+        match db.send_provider_directory(1) {
             Ok(_) => panic!("Expected error for no data in provider directory"),
             Err(_) => (),
         }
