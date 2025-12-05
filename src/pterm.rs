@@ -34,7 +34,9 @@ enum MenuOption {
 pub fn run(db: &DB) {
     let mut quit: bool = false;
 
-    if !validate_provider(db) {
+    let id: i32 = validate_provider(db);
+    let provider_id = id.cast_unsigned();
+    if id < 0 {
         println!("Invalid provider id.");
         println!(
             "Ensure that the provider has been added from the manager terminal."
@@ -73,8 +75,6 @@ pub fn run(db: &DB) {
                     .format("%m-%d-%Y %H:%M:%S")
                     .to_string();
                 let service_date = input("Service date (MM-DD-YYYY): ");
-                let provider_id: u32 =
-                    input("Provider ID: ").parse().unwrap_or(0);
                 let service_code: u32 = get_service_code(db);
                 let comments = input("Comments: ");
 
@@ -159,12 +159,25 @@ fn input(prompt: &str) -> String {
     s.trim().to_string()
 }
 
-fn validate_provider(db: &DB) -> bool {
+/// Obtains and checks if the provider id is valid.
+///
+/// # Arguments
+///
+/// * `db` - The database to check the id validity inside of.
+///
+/// # Success
+///
+/// Will return the valid id.
+///
+/// # Failure
+///
+/// Will return a negative value.
+fn validate_provider(db: &DB) -> i32 {
     println!("Enter your provider number/id: ");
     io::stdout().flush().unwrap();
 
     let mut valid_input = false;
-    let mut number: u32 = 0;
+    let mut number: i32 = -1;
 
     while !valid_input {
         let mut input = String::new();
@@ -176,17 +189,23 @@ fn validate_provider(db: &DB) -> bool {
         match input.parse::<u32>() {
             Ok(n) => {
                 valid_input = true;
-                number = n;
+                number = n.cast_signed();
             }
             Err(_) => println!("Invalid input. Try again"),
         }
     }
 
-    match db.is_valid_provider_id(number) {
-        Ok(is_valid_user) => is_valid_user,
+    match db.is_valid_provider_id(number.cast_unsigned()) {
+        Ok(valid) => {
+            if valid {
+                number
+            } else {
+                -1
+            }
+        }
         Err(err) => {
             println!("Error validating id: {}", err);
-            false
+            -1
         }
     }
 }
