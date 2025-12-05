@@ -22,6 +22,7 @@ use std::io::{self, Write};
 enum MenuOption {
     AddConsultationRecord,
     GetProviderDirectory,
+    ValidateMember,
     Quit,
 }
 
@@ -49,6 +50,15 @@ pub fn run(db: &DB) {
             MenuOption::Quit => {
                 println!("Exiting provider terminal...");
                 quit = true;
+            }
+            MenuOption::ValidateMember => {
+                if validate_member(db) {
+                    println!("Validated");
+                    continue;
+                } else {
+                    println!("Invalid Number");
+                    continue;
+                }
             }
             MenuOption::AddConsultationRecord => {
                 if !validate_member(db) {
@@ -121,6 +131,7 @@ fn print_menu_options() {
     println!("( 0 ) Quit");
     println!("( 1 ) Add Consultation Record");
     println!("( 2 ) Get Provider Directory");
+    println!("( 3 ) Validate Member");
     print!("Choice: ");
     io::stdout().flush().unwrap();
 }
@@ -138,8 +149,9 @@ fn get_menu_option() -> MenuOption {
             "0" => return MenuOption::Quit,
             "1" => return MenuOption::AddConsultationRecord,
             "2" => return MenuOption::GetProviderDirectory,
+            "3" => return MenuOption::ValidateMember,
             _ => {
-                println!("Invalid option. Please enter 0, 1, or 2.");
+                println!("Invalid option. Please enter 0, 1, 2, or 3.");
                 print!("Choice: ");
                 io::stdout().flush().unwrap();
             }
