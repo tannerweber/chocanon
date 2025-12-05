@@ -52,7 +52,7 @@
 <a href=#52 id=52 data-nosnippet>52</a>                quit = <span class="bool-val">true</span>;
 <a href=#53 id=53 data-nosnippet>53</a>            }
 <a href=#54 id=54 data-nosnippet>54</a>            MenuOption::ValidateMember =&gt; {
-<a href=#55 id=55 data-nosnippet>55</a>                <span class="kw">if </span>validate_member(db) {
+<a href=#55 id=55 data-nosnippet>55</a>                <span class="kw">if </span>validate_member(db) &gt; <span class="number">0 </span>{
 <a href=#56 id=56 data-nosnippet>56</a>                    <span class="macro">println!</span>(<span class="string">"Validated"</span>);
 <a href=#57 id=57 data-nosnippet>57</a>                    <span class="kw">continue</span>;
 <a href=#58 id=58 data-nosnippet>58</a>                } <span class="kw">else </span>{
@@ -61,20 +61,20 @@
 <a href=#61 id=61 data-nosnippet>61</a>                }
 <a href=#62 id=62 data-nosnippet>62</a>            }
 <a href=#63 id=63 data-nosnippet>63</a>            MenuOption::AddConsultationRecord =&gt; {
-<a href=#64 id=64 data-nosnippet>64</a>                <span class="kw">if </span>!validate_member(db) {
-<a href=#65 id=65 data-nosnippet>65</a>                    <span class="macro">println!</span>(<span class="string">"Invalid Number"</span>);
-<a href=#66 id=66 data-nosnippet>66</a>                    <span class="kw">continue</span>;
-<a href=#67 id=67 data-nosnippet>67</a>                } <span class="kw">else </span>{
-<a href=#68 id=68 data-nosnippet>68</a>                    <span class="macro">println!</span>(<span class="string">"Validated"</span>);
-<a href=#69 id=69 data-nosnippet>69</a>                }
-<a href=#70 id=70 data-nosnippet>70</a>                <span class="macro">print!</span>(<span class="string">"\n---Add Consultation Record---\n"</span>);
-<a href=#71 id=71 data-nosnippet>71</a>                <span class="kw">let </span>curr_date = chrono::Local::now()
-<a href=#72 id=72 data-nosnippet>72</a>                    .format(<span class="string">"%m-%d-%Y %H:%M:%S"</span>)
-<a href=#73 id=73 data-nosnippet>73</a>                    .to_string();
-<a href=#74 id=74 data-nosnippet>74</a>                <span class="kw">let </span>service_date = input(<span class="string">"Service date (MM-DD-YYYY): "</span>);
-<a href=#75 id=75 data-nosnippet>75</a>                <span class="kw">let </span>provider_id: u32 =
-<a href=#76 id=76 data-nosnippet>76</a>                    input(<span class="string">"Provider ID: "</span>).parse().unwrap_or(<span class="number">0</span>);
-<a href=#77 id=77 data-nosnippet>77</a>                <span class="kw">let </span>member_id: u32 = input(<span class="string">"Member ID: "</span>).parse().unwrap();
+<a href=#64 id=64 data-nosnippet>64</a>                <span class="kw">let </span>member_id = validate_member(db);
+<a href=#65 id=65 data-nosnippet>65</a>                <span class="kw">if </span>member_id &lt; <span class="number">0 </span>{
+<a href=#66 id=66 data-nosnippet>66</a>                    <span class="macro">println!</span>(<span class="string">"Invalid Number"</span>);
+<a href=#67 id=67 data-nosnippet>67</a>                    <span class="kw">continue</span>;
+<a href=#68 id=68 data-nosnippet>68</a>                } <span class="kw">else </span>{
+<a href=#69 id=69 data-nosnippet>69</a>                    <span class="macro">println!</span>(<span class="string">"Validated"</span>);
+<a href=#70 id=70 data-nosnippet>70</a>                }
+<a href=#71 id=71 data-nosnippet>71</a>                <span class="macro">print!</span>(<span class="string">"\n---Add Consultation Record---\n"</span>);
+<a href=#72 id=72 data-nosnippet>72</a>                <span class="kw">let </span>curr_date = chrono::Local::now()
+<a href=#73 id=73 data-nosnippet>73</a>                    .format(<span class="string">"%m-%d-%Y %H:%M:%S"</span>)
+<a href=#74 id=74 data-nosnippet>74</a>                    .to_string();
+<a href=#75 id=75 data-nosnippet>75</a>                <span class="kw">let </span>service_date = input(<span class="string">"Service date (MM-DD-YYYY): "</span>);
+<a href=#76 id=76 data-nosnippet>76</a>                <span class="kw">let </span>provider_id: u32 =
+<a href=#77 id=77 data-nosnippet>77</a>                    input(<span class="string">"Provider ID: "</span>).parse().unwrap_or(<span class="number">0</span>);
 <a href=#78 id=78 data-nosnippet>78</a>                <span class="kw">let </span>service_code: u32 = get_service_code(db);
 <a href=#79 id=79 data-nosnippet>79</a>                <span class="kw">let </span>comments = input(<span class="string">"Comments: "</span>);
 <a href=#80 id=80 data-nosnippet>80</a>
@@ -82,7 +82,7 @@
 <a href=#82 id=82 data-nosnippet>82</a>                    curr_date.as_str(),
 <a href=#83 id=83 data-nosnippet>83</a>                    service_date.as_str(),
 <a href=#84 id=84 data-nosnippet>84</a>                    provider_id,
-<a href=#85 id=85 data-nosnippet>85</a>                    member_id,
+<a href=#85 id=85 data-nosnippet>85</a>                    member_id.cast_unsigned(),
 <a href=#86 id=86 data-nosnippet>86</a>                    service_code,
 <a href=#87 id=87 data-nosnippet>87</a>                    comments.as_str(),
 <a href=#88 id=88 data-nosnippet>88</a>                ) {
@@ -198,61 +198,80 @@
 <a href=#198 id=198 data-nosnippet>198</a>    }
 <a href=#199 id=199 data-nosnippet>199</a>}
 <a href=#200 id=200 data-nosnippet>200</a>
-<a href=#201 id=201 data-nosnippet>201</a><span class="kw">fn </span>validate_member(db: <span class="kw-2">&amp;</span>DB) -&gt; bool {
-<a href=#202 id=202 data-nosnippet>202</a>    <span class="macro">println!</span>(<span class="string">"Enter the member number/id: "</span>);
-<a href=#203 id=203 data-nosnippet>203</a>    io::stdout().flush().unwrap();
-<a href=#204 id=204 data-nosnippet>204</a>
-<a href=#205 id=205 data-nosnippet>205</a>    <span class="kw">let </span><span class="kw-2">mut </span>valid_input = <span class="bool-val">false</span>;
-<a href=#206 id=206 data-nosnippet>206</a>    <span class="kw">let </span><span class="kw-2">mut </span>number: u32 = <span class="number">0</span>;
-<a href=#207 id=207 data-nosnippet>207</a>
-<a href=#208 id=208 data-nosnippet>208</a>    <span class="kw">while </span>!valid_input {
-<a href=#209 id=209 data-nosnippet>209</a>        <span class="kw">let </span><span class="kw-2">mut </span>input = String::new();
-<a href=#210 id=210 data-nosnippet>210</a>        std::io::stdin()
-<a href=#211 id=211 data-nosnippet>211</a>            .read_line(<span class="kw-2">&amp;mut </span>input)
-<a href=#212 id=212 data-nosnippet>212</a>            .expect(<span class="string">"Failed to read line"</span>);
-<a href=#213 id=213 data-nosnippet>213</a>        <span class="kw">let </span>input = input.trim();
-<a href=#214 id=214 data-nosnippet>214</a>
-<a href=#215 id=215 data-nosnippet>215</a>        <span class="kw">match </span>input.parse::&lt;u32&gt;() {
-<a href=#216 id=216 data-nosnippet>216</a>            <span class="prelude-val">Ok</span>(n) =&gt; {
-<a href=#217 id=217 data-nosnippet>217</a>                valid_input = <span class="bool-val">true</span>;
-<a href=#218 id=218 data-nosnippet>218</a>                number = n;
-<a href=#219 id=219 data-nosnippet>219</a>            }
-<a href=#220 id=220 data-nosnippet>220</a>            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">println!</span>(<span class="string">"Invalid input. Try again"</span>),
-<a href=#221 id=221 data-nosnippet>221</a>        }
-<a href=#222 id=222 data-nosnippet>222</a>    }
-<a href=#223 id=223 data-nosnippet>223</a>
-<a href=#224 id=224 data-nosnippet>224</a>    <span class="kw">match </span>db.is_valid_member_id(number) {
-<a href=#225 id=225 data-nosnippet>225</a>        <span class="prelude-val">Ok</span>(is_valid_user) =&gt; is_valid_user,
-<a href=#226 id=226 data-nosnippet>226</a>        <span class="prelude-val">Err</span>(err) =&gt; {
-<a href=#227 id=227 data-nosnippet>227</a>            <span class="macro">println!</span>(<span class="string">"Error validating id: {}"</span>, err);
-<a href=#228 id=228 data-nosnippet>228</a>            <span class="bool-val">false
-<a href=#229 id=229 data-nosnippet>229</a>        </span>}
-<a href=#230 id=230 data-nosnippet>230</a>    }
-<a href=#231 id=231 data-nosnippet>231</a>}
-<a href=#232 id=232 data-nosnippet>232</a>
-<a href=#233 id=233 data-nosnippet>233</a><span class="kw">fn </span>get_service_code(db: <span class="kw-2">&amp;</span>DB) -&gt; u32 {
-<a href=#234 id=234 data-nosnippet>234</a>    <span class="kw">let </span>id: u32;
-<a href=#235 id=235 data-nosnippet>235</a>    <span class="kw">loop </span>{
-<a href=#236 id=236 data-nosnippet>236</a>        <span class="kw">let </span>service_code: u32 = input(<span class="string">"Service code: "</span>).parse().unwrap();
-<a href=#237 id=237 data-nosnippet>237</a>        <span class="kw">match </span>db.is_valid_service_id(service_code) {
-<a href=#238 id=238 data-nosnippet>238</a>            <span class="prelude-val">Ok</span>(valid) =&gt; {
-<a href=#239 id=239 data-nosnippet>239</a>                <span class="kw">if </span>valid {
-<a href=#240 id=240 data-nosnippet>240</a>                    <span class="kw">match </span>db.get_service_name(service_code) {
-<a href=#241 id=241 data-nosnippet>241</a>                        <span class="prelude-val">Ok</span>(name) =&gt; {
-<a href=#242 id=242 data-nosnippet>242</a>                            <span class="macro">println!</span>(<span class="string">"Service Name: {}"</span>, name);
-<a href=#243 id=243 data-nosnippet>243</a>                            <span class="kw">if </span>input(<span class="string">"Is the name correct (y/n): "</span>) == <span class="string">"y" </span>{
-<a href=#244 id=244 data-nosnippet>244</a>                                id = service_code;
-<a href=#245 id=245 data-nosnippet>245</a>                                <span class="kw">break</span>;
-<a href=#246 id=246 data-nosnippet>246</a>                            }
-<a href=#247 id=247 data-nosnippet>247</a>                        }
-<a href=#248 id=248 data-nosnippet>248</a>                        <span class="prelude-val">Err</span>(err) =&gt; {
-<a href=#249 id=249 data-nosnippet>249</a>                            <span class="macro">println!</span>(<span class="string">"Error for getting service code: {}"</span>, err)
-<a href=#250 id=250 data-nosnippet>250</a>                        }
-<a href=#251 id=251 data-nosnippet>251</a>                    }
-<a href=#252 id=252 data-nosnippet>252</a>                }
-<a href=#253 id=253 data-nosnippet>253</a>            }
-<a href=#254 id=254 data-nosnippet>254</a>            <span class="prelude-val">Err</span>(err) =&gt; <span class="macro">println!</span>(<span class="string">"Error for verify service code: {}"</span>, err),
-<a href=#255 id=255 data-nosnippet>255</a>        }
-<a href=#256 id=256 data-nosnippet>256</a>    }
-<a href=#257 id=257 data-nosnippet>257</a>    id
-<a href=#258 id=258 data-nosnippet>258</a>}</code></pre></div></section></main></body></html>
+<a href=#201 id=201 data-nosnippet>201</a><span class="doccomment">/// Obtains and checks if the member id is valid.
+<a href=#202 id=202 data-nosnippet>202</a>///
+<a href=#203 id=203 data-nosnippet>203</a>/// # Arguments
+<a href=#204 id=204 data-nosnippet>204</a>///
+<a href=#205 id=205 data-nosnippet>205</a>/// * `db` - The database to check the id validity inside of.
+<a href=#206 id=206 data-nosnippet>206</a>///
+<a href=#207 id=207 data-nosnippet>207</a>/// # Success
+<a href=#208 id=208 data-nosnippet>208</a>///
+<a href=#209 id=209 data-nosnippet>209</a>/// Will return the valid id.
+<a href=#210 id=210 data-nosnippet>210</a>///
+<a href=#211 id=211 data-nosnippet>211</a>/// # Failure
+<a href=#212 id=212 data-nosnippet>212</a>///
+<a href=#213 id=213 data-nosnippet>213</a>/// Will return a negative value.
+<a href=#214 id=214 data-nosnippet>214</a></span><span class="kw">fn </span>validate_member(db: <span class="kw-2">&amp;</span>DB) -&gt; i32 {
+<a href=#215 id=215 data-nosnippet>215</a>    <span class="macro">println!</span>(<span class="string">"Enter the member number/id: "</span>);
+<a href=#216 id=216 data-nosnippet>216</a>    io::stdout().flush().unwrap();
+<a href=#217 id=217 data-nosnippet>217</a>
+<a href=#218 id=218 data-nosnippet>218</a>    <span class="kw">let </span><span class="kw-2">mut </span>valid_input = <span class="bool-val">false</span>;
+<a href=#219 id=219 data-nosnippet>219</a>    <span class="kw">let </span><span class="kw-2">mut </span>number: i32 = -<span class="number">1</span>;
+<a href=#220 id=220 data-nosnippet>220</a>
+<a href=#221 id=221 data-nosnippet>221</a>    <span class="kw">while </span>!valid_input {
+<a href=#222 id=222 data-nosnippet>222</a>        <span class="kw">let </span><span class="kw-2">mut </span>input = String::new();
+<a href=#223 id=223 data-nosnippet>223</a>        std::io::stdin()
+<a href=#224 id=224 data-nosnippet>224</a>            .read_line(<span class="kw-2">&amp;mut </span>input)
+<a href=#225 id=225 data-nosnippet>225</a>            .expect(<span class="string">"Failed to read line"</span>);
+<a href=#226 id=226 data-nosnippet>226</a>        <span class="kw">let </span>input = input.trim();
+<a href=#227 id=227 data-nosnippet>227</a>
+<a href=#228 id=228 data-nosnippet>228</a>        <span class="kw">match </span>input.parse::&lt;u32&gt;() {
+<a href=#229 id=229 data-nosnippet>229</a>            <span class="prelude-val">Ok</span>(n) =&gt; {
+<a href=#230 id=230 data-nosnippet>230</a>                valid_input = <span class="bool-val">true</span>;
+<a href=#231 id=231 data-nosnippet>231</a>                number = n.cast_signed();
+<a href=#232 id=232 data-nosnippet>232</a>            }
+<a href=#233 id=233 data-nosnippet>233</a>            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">println!</span>(<span class="string">"Invalid input. Try again"</span>),
+<a href=#234 id=234 data-nosnippet>234</a>        }
+<a href=#235 id=235 data-nosnippet>235</a>    }
+<a href=#236 id=236 data-nosnippet>236</a>
+<a href=#237 id=237 data-nosnippet>237</a>    <span class="kw">match </span>db.is_valid_member_id(number.cast_unsigned()) {
+<a href=#238 id=238 data-nosnippet>238</a>        <span class="prelude-val">Ok</span>(valid) =&gt; {
+<a href=#239 id=239 data-nosnippet>239</a>            <span class="kw">if </span>valid {
+<a href=#240 id=240 data-nosnippet>240</a>                number
+<a href=#241 id=241 data-nosnippet>241</a>            } <span class="kw">else </span>{
+<a href=#242 id=242 data-nosnippet>242</a>                -<span class="number">1
+<a href=#243 id=243 data-nosnippet>243</a>            </span>}
+<a href=#244 id=244 data-nosnippet>244</a>        }
+<a href=#245 id=245 data-nosnippet>245</a>        <span class="prelude-val">Err</span>(err) =&gt; {
+<a href=#246 id=246 data-nosnippet>246</a>            <span class="macro">println!</span>(<span class="string">"Error validating id: {}"</span>, err);
+<a href=#247 id=247 data-nosnippet>247</a>            -<span class="number">1
+<a href=#248 id=248 data-nosnippet>248</a>        </span>}
+<a href=#249 id=249 data-nosnippet>249</a>    }
+<a href=#250 id=250 data-nosnippet>250</a>}
+<a href=#251 id=251 data-nosnippet>251</a>
+<a href=#252 id=252 data-nosnippet>252</a><span class="kw">fn </span>get_service_code(db: <span class="kw-2">&amp;</span>DB) -&gt; u32 {
+<a href=#253 id=253 data-nosnippet>253</a>    <span class="kw">let </span>id: u32;
+<a href=#254 id=254 data-nosnippet>254</a>    <span class="kw">loop </span>{
+<a href=#255 id=255 data-nosnippet>255</a>        <span class="kw">let </span>service_code: u32 = input(<span class="string">"Service code: "</span>).parse().unwrap();
+<a href=#256 id=256 data-nosnippet>256</a>        <span class="kw">match </span>db.is_valid_service_id(service_code) {
+<a href=#257 id=257 data-nosnippet>257</a>            <span class="prelude-val">Ok</span>(valid) =&gt; {
+<a href=#258 id=258 data-nosnippet>258</a>                <span class="kw">if </span>valid {
+<a href=#259 id=259 data-nosnippet>259</a>                    <span class="kw">match </span>db.get_service_name(service_code) {
+<a href=#260 id=260 data-nosnippet>260</a>                        <span class="prelude-val">Ok</span>(name) =&gt; {
+<a href=#261 id=261 data-nosnippet>261</a>                            <span class="macro">println!</span>(<span class="string">"Service Name: {}"</span>, name);
+<a href=#262 id=262 data-nosnippet>262</a>                            <span class="kw">if </span>input(<span class="string">"Is the name correct (y/n): "</span>) == <span class="string">"y" </span>{
+<a href=#263 id=263 data-nosnippet>263</a>                                id = service_code;
+<a href=#264 id=264 data-nosnippet>264</a>                                <span class="kw">break</span>;
+<a href=#265 id=265 data-nosnippet>265</a>                            }
+<a href=#266 id=266 data-nosnippet>266</a>                        }
+<a href=#267 id=267 data-nosnippet>267</a>                        <span class="prelude-val">Err</span>(err) =&gt; {
+<a href=#268 id=268 data-nosnippet>268</a>                            <span class="macro">println!</span>(<span class="string">"Error for getting service code: {}"</span>, err)
+<a href=#269 id=269 data-nosnippet>269</a>                        }
+<a href=#270 id=270 data-nosnippet>270</a>                    }
+<a href=#271 id=271 data-nosnippet>271</a>                }
+<a href=#272 id=272 data-nosnippet>272</a>            }
+<a href=#273 id=273 data-nosnippet>273</a>            <span class="prelude-val">Err</span>(err) =&gt; <span class="macro">println!</span>(<span class="string">"Error for verify service code: {}"</span>, err),
+<a href=#274 id=274 data-nosnippet>274</a>        }
+<a href=#275 id=275 data-nosnippet>275</a>    }
+<a href=#276 id=276 data-nosnippet>276</a>    id
+<a href=#277 id=277 data-nosnippet>277</a>}</code></pre></div></section></main></body></html>
