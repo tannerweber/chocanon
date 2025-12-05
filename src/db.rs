@@ -511,11 +511,11 @@ impl DB {
             + &format!("Total fees: {}\n", total_fees)
     }
 
-    /// Sends out a the provider directory to the specified email.
+    /// Sends out the provider directory to the specified provider.
     ///
     /// # Arguments
     ///
-    /// * `email` - The email address to send the provider directory to.
+    /// * `id - The id of the provider to send the report to.
     ///
     /// # Failure
     ///
