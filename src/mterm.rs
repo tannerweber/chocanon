@@ -25,6 +25,7 @@ pub fn run_man_term(db: &DB) {
         let choice = display_options();
 
         match choice.as_str() {
+            "0" => quit = true,
             "1" => add_person_ui(db),
             "2" => remove_person(db),
             "3" => match db.send_member_reports() {
@@ -39,7 +40,7 @@ pub fn run_man_term(db: &DB) {
                 Ok(()) => println!("Manager report sent."),
                 Err(e) => eprintln!("Error sending manager report: {e}"),
             },
-            "6" => quit = true,
+            "6" => add_service(db),
             _ => println!("Invalid input."),
         }
     }
@@ -49,12 +50,13 @@ pub fn run_man_term(db: &DB) {
 //returns string
 fn display_options() -> String {
     println!("----MANAGER TERMINAL----");
+    println!("0. Quit");
     println!("1. Add new person");
     println!("2. Remove person");
     println!("3. Send out member reports");
     println!("4. Send out provider reports");
     println!("5. Request manager report");
-    println!("6. Quit");
+    println!("6. Add a service");
     read_choice()
 }
 
@@ -178,4 +180,15 @@ fn read_line(prompt: &str) -> String {
         .read_line(&mut buf)
         .expect("Failed to read line");
     buf.trim().to_string()
+}
+
+fn add_service(db: &DB) {
+    let id: u32 = read_line("Enter the service id: ").parse().unwrap();
+    let name: String = read_line("Enter the service name: ");
+    let fee: f64 = read_line("Enter the service fee: ").parse().unwrap();
+
+    match db.add_service(id, &name, fee) {
+        Ok(_) => (),
+        Err(err) => eprintln!("Error adding service: {}", err),
+    }
 }
